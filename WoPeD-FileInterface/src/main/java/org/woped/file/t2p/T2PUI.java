@@ -468,15 +468,19 @@ public class T2PUI extends JDialog {
      * @param provider The LLM provider to use
      */
     void llmBackgroundWorker(String text, String apiKey, String provider) {
-        String port = (Integer.toString(ConfigurationManager.getConfiguration().getT2PLlmServicePort()).isEmpty() ? ""
-                : ":" + ConfigurationManager.getConfiguration().getT2PLlmServicePort());
-        String protocol = ConfigurationManager.getConfiguration().getT2PLlmServicePort() == 443
-                || Integer.toString(ConfigurationManager.getConfiguration().getT2PLlmServicePort()).isEmpty()
-                        ? "https://"
-                        : "http://";
+        int portNum = ConfigurationManager.getConfiguration().getT2PLlmServicePort();
         String host = ConfigurationManager.getConfiguration().getT2PLlmServiceHost().trim();
-        String connectionStr = protocol.trim() + host.trim() + port.trim()
-                + ConfigurationManager.getConfiguration().getT2PLlmServiceUri();
+        
+        // Determine protocol based on port
+        String protocol = (portNum == 443 || portNum == 0) ? "https://" : "http://";
+        
+        // Only add port if it's not the default for the protocol (443 for https, 80 for http)
+        String port = "";
+        if (portNum > 0 && !((protocol.equals("https://") && portNum == 443) || (protocol.equals("http://") && portNum == 80))) {
+            port = ":" + portNum;
+        }
+        
+        String connectionStr = protocol + host + port + ConfigurationManager.getConfiguration().getT2PLlmServiceUri() + "/generate_PNML";
         System.out.println("Connecting to LLM service at: " + connectionStr);
 
         bgTask = new SwingWorker<HttpURLConnection, Void>() {
