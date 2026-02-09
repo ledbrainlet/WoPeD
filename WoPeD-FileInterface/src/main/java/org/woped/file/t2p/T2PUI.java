@@ -50,14 +50,12 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingWorker;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import org.woped.core.config.ConfigurationManager;
 import org.woped.core.controller.AbstractApplicationMediator;
 import org.woped.core.controller.IEditor;
 import org.woped.editor.controller.vc.EditorVC;
 import org.woped.file.PNMLImport;
-import org.woped.file.t2p.model.LlmResponse;
 import org.woped.gui.lookAndFeel.WopedButton;
 import org.woped.gui.translations.Messages;
 
@@ -524,22 +522,20 @@ public class T2PUI extends JDialog {
                     // Retrieve the HttpURLConnection object from doInBackground()
                     connection = get();
                     int responseCode = connection.getResponseCode();
-                    Gson gson = new Gson();
-
                     if (responseCode == 200) {
                         // Reading the response
                         try (BufferedReader bufferedReader = new BufferedReader(
                                 new InputStreamReader(connection.getInputStream()))) {
-                            LlmResponse llmResponse = gson.fromJson(bufferedReader, LlmResponse.class);
-                            // Check if the response is valid and contains a result
-                            if (llmResponse != null && llmResponse.getResult() != null) {
-                                String pnml = llmResponse.getResult();
-                                if (!pnml.isEmpty()) {
-                                    // Display the generated PNML if not empty
-                                    displayPNML(pnml);
-                                } else {
-                                    showErrorPopUp("T2PUI.LLMError.Title", "T2PUI.EmptyResponse.Text");
-                                }
+                            StringBuilder responseJson = new StringBuilder();
+                            String responseLine;
+                            while ((responseLine = bufferedReader.readLine()) != null) {
+                                responseJson.append(responseLine.trim());
+                            }
+
+                            String pnml = T2PResponseParser.extractPnml(responseJson.toString());
+                            if (pnml != null && !pnml.isEmpty()) {
+                                // Display the generated PNML if not empty
+                                displayPNML(pnml);
                             } else {
                                 showErrorPopUp("T2PUI.LLMError.Title", "T2PUI.InvalidResponse.Text");
                             }
@@ -644,13 +640,12 @@ public class T2PUI extends JDialog {
                             while ((responseLine = bufferedReader.readLine()) != null) {
                                 responseJson.append(responseLine.trim());
                             }
-                            String pnml = responseJson.toString();
-                            // Extracting the pnml-xml from the json body
-                            if (!pnml.isEmpty()) {
+                            String pnml = T2PResponseParser.extractPnml(responseJson.toString());
+                            // Extract the pnml-xml from the JSON body
+                            if (pnml != null && !pnml.isEmpty()) {
                                 displayPNML(pnml);
                             } else {
-                                // TODO: error handling
-
+                                showErrorPopUp("T2PUI.LLMError.Title", "T2PUI.InvalidResponse.Text");
                             }
                             break;
                         case 400:
@@ -674,6 +669,9 @@ public class T2PUI extends JDialog {
                                     + Messages.getString("T2PUI.Webservice.Settings"),
                             Messages.getString("T2PUI.500Error.Title"),
                             JOptionPane.ERROR_MESSAGE);
+                    return;
+                } catch (JsonSyntaxException e) {
+                    showErrorPopUp("T2PUI.LLMError.Title", "T2PUI.InvalidResponse.Text");
                     return;
                 } catch (IOException e) {
                     String[] arg = { connectionStr };
