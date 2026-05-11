@@ -640,6 +640,9 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             promptText.setLineWrap(true);
             promptText.setWrapStyleWord(true);
             promptText.setEnabled(true);
+            // WFC-US9 (#12): tooltip explains the role of this text as an extension to the
+            // base prompt that WoPeD assembles before sending the LLM request.
+            promptText.setToolTipText(Messages.getString("Configuration.GPT.tool.tip.text.Title"));
             promptText.setText(
                     "Create a clearly structured and comprehensible continuous text from the given BPMN that is understandable for an uninformed reader. The text should be easy to read in the summary and contain all important content; if there are subdivided points, these are integrated into the text with suitable sentence beginnings in order to obtain a well-structured and easy-to-read text. Under no circumstances should the output contain sub-items or paragraphs, but should cover all processes in one piece!");
         }
@@ -659,7 +662,8 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         if (showAgainBox == null) {
             showAgainBox = new JCheckBox(Messages.getString("Configuration.GPT.show.again.Title"));
             showAgainBox.setEnabled(true);
-            showAgainBox.setToolTipText(Messages.getString("Configuration.GPT.tool.tip.text.Title"));
+            // WFC-US9 (#12): the tooltip key Configuration.GPT.tool.tip.text.Title
+            // describes the prompt text area, so it now lives on getPromptText().
         }
         return showAgainBox;
     }
