@@ -195,6 +195,11 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         } finally {
             readingConfig = false;
         }
+
+        // WFC-US6 (#7): once the dialog values are loaded, kick off a silent API-key
+        // validation and model fetch on the EDT so the user sees the saved key's
+        // verdict and the saved model in the dropdown without manual clicks.
+        SwingUtilities.invokeLater(this::triggerInitialChecks);
     }
 
     private void initialize() {
@@ -503,13 +508,14 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
                 // WFC-US5 (#6): auto-fetch models for the newly selected provider as soon
                 // as we have what we need (lmStudio: nothing, others: a non-empty API key).
                 // Skip during readConfiguration() so opening the dialog doesn't fire a
-                // fetch against a stale stored key.
+                // fetch against a stale stored key. WFC-US6 (#7): silent on error here —
+                // the user just changed providers, an alert popup would be noise.
                 if (!readingConfig) {
                     String key = getApiKeyText().getText();
                     boolean canFetch = "lmStudio".equals(selectedProvider)
                             || (key != null && !key.trim().isEmpty());
                     if (canFetch) {
-                        fetchAndFillModels();
+                        fetchAndFillModels(true);
                     }
                 }
             });
@@ -833,8 +839,10 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             // WFC-US9 (#12): tooltip explains the role of this text as an extension to the
             // base prompt that WoPeD assembles before sending the LLM request.
             promptText.setToolTipText(Messages.getString("Configuration.GPT.tool.tip.text.Title"));
-            promptText.setText(
-                    "Create a clearly structured and comprehensible continuous text from the given BPMN that is understandable for an uninformed reader. The text should be easy to read in the summary and contain all important content; if there are subdivided points, these are integrated into the text with suitable sentence beginnings in order to obtain a well-structured and easy-to-read text. Under no circumstances should the output contain sub-items or paragraphs, but should cover all processes in one piece!");
+            // Default is intentionally empty per Prof. Freytag's feedback — the field is an
+            // optional extension to WoPeD's generated base prompt, not a complete prompt
+            // template.
+            promptText.setText("");
         }
         return promptText;
     }
@@ -1387,7 +1395,18 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         return serverPortText_T2P;
     }
 
+    /** Convenience: fetch with error dialogs (used by the explicit "GPT-Modelle abrufen" button). */
     private void fetchAndFillModels() {
+        fetchAndFillModels(false);
+    }
+
+    /**
+     * Fetch the model list from the configured provider and fill the model
+     * combobox. WFC-US6 (#7): callers that fire on dialog open / provider change
+     * pass {@code silentOnError = true} so background fetches don't surprise the
+     * user with error popups.
+     */
+    private void fetchAndFillModels(boolean silentOnError) {
         new Thread(() -> {
             try {
                 // Provider aus der ComboBox nehmen
@@ -1404,8 +1423,6 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
 
                 modelComboBox.removeAllItems(); // Zuerst alte Modelle entfernen
                 List<String> models = ApiHelper.fetchModels(apiKey, provider);
-                // String provider = ConfigurationManager.getConfiguration().getLlmProvider();
-                // List<String> models = ApiHelper.fetchModels(apiKeyText.getText(), provider);
                 SwingUtilities.invokeLater(() -> {
                     for (String model : models) {
                         modelComboBox.addItem(model);
@@ -1413,13 +1430,35 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
                     modelComboBox.setSelectedItem(ConfigurationManager.getConfiguration().getGptModel());
                 });
             } catch (IOException | ParseException e) {
-                SwingUtilities.invokeLater(() -> {
-                    JOptionPane.showMessageDialog(this,
-                            Messages.getString("P2T.exception.fail.fetch.models") + e.getMessage(),
-                            Messages.getString("P2T.exception.fetch.models"), JOptionPane.ERROR_MESSAGE);
-                });
+                if (silentOnError) {
+                    org.woped.core.utilities.LoggerManager.warn(
+                            org.woped.editor.Constants.EDITOR_LOGGER,
+                            "Silent model fetch failed: " + e.getMessage());
+                } else {
+                    SwingUtilities.invokeLater(() -> {
+                        JOptionPane.showMessageDialog(this,
+                                Messages.getString("P2T.exception.fail.fetch.models") + e.getMessage(),
+                                Messages.getString("P2T.exception.fetch.models"), JOptionPane.ERROR_MESSAGE);
+                    });
+                }
             }
         }).start();
+    }
+
+    /**
+     * WFC-US6 (#7): kick off background API-key validation and model fetch when
+     * the dialog opens so the user sees the verdict + model list without having
+     * to click anything. Failures are logged silently — no surprise popups.
+     */
+    private void triggerInitialChecks() {
+        runApiKeyApiCheck();
+        String key = getApiKeyText().getText();
+        String provider = (String) getProviderComboBox().getSelectedItem();
+        boolean canFetch = "lmStudio".equals(provider)
+                || (key != null && !key.trim().isEmpty());
+        if (canFetch) {
+            fetchAndFillModels(true);
+        }
     }
 
     /**
