@@ -189,10 +189,13 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         c.gridy = 0;
         contentPanel.add(getEnabledPanel(), c);
 
-        c.weightx = 1;
-        c.gridx = 0;
-        c.gridy = 1;
-        contentPanel.add(getSettingsPanel(), c);
+        // P2T server settings panel hidden per WFC-US1 (Prof Freytag, 2026-05-11).
+        // Code in getSettingsPanel() / applyConfiguration() / readConfiguration()
+        // is retained for potential reactivation.
+        // c.weightx = 1;
+        // c.gridx = 0;
+        // c.gridy = 1;
+        // contentPanel.add(getSettingsPanel(), c);
 
         c.weightx = 1;
         c.gridx = 0;
@@ -424,15 +427,16 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             c.gridwidth = 2;
             settingsPanel_LLM.add(getServiceUriText_LLM(), c);
 
+            // Test- und Default-Button auf die Port-Zeile, analog NLP-Panel (WFC-US1)
             c.weightx = 1;
-            c.gridx = 1;
-            c.gridy = 3;
+            c.gridx = 2;
+            c.gridy = 1;
             c.gridwidth = 1;
             settingsPanel_LLM.add(getTestButton_LLM(), c);
 
             c.weightx = 1;
-            c.gridx = 2;
-            c.gridy = 3;
+            c.gridx = 3;
+            c.gridy = 1;
             settingsPanel_LLM.add(getDefaultButton_LLM(), c);
         }
 
