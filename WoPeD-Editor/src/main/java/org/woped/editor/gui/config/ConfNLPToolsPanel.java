@@ -1,5 +1,6 @@
 package org.woped.editor.gui.config;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
@@ -7,6 +8,8 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.BufferedReader;
@@ -16,6 +19,8 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.util.List;
 
@@ -23,6 +28,8 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import org.json.simple.parser.ParseException;
 import org.woped.core.config.ConfigurationManager;
@@ -95,6 +102,10 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
     // is running, so opening the dialog does not trigger a fetch (and a 401 dialog)
     // against a possibly stale stored API key.
     private boolean readingConfig = false;
+
+    // WFC-US12 (#17): inline API-key validator state
+    private JLabel apiKeyStatusLabel = null;
+    private JPanel apiKeyContainer  = null;
 
     public ConfNLPToolsPanel(String name) {
         super(name);
@@ -478,11 +489,16 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
                         }
                     }
                 }
-                getApiKeyText().setVisible(showApiKey);
+                // WFC-US12 (#17): hide the wrapping container (text field + status label) together.
+        getApiKeyAndStatus().setVisible(showApiKey);
 
                 // Panel neu zeichnen
                 getGPTPanel().revalidate();
                 getGPTPanel().repaint();
+
+                // WFC-US12 (#17): refresh the API-key status indicator for the new provider
+                // (format expectations differ between openAi / gemini / lmStudio).
+                runApiKeyFormatCheck();
 
                 // WFC-US5 (#6): auto-fetch models for the newly selected provider as soon
                 // as we have what we need (lmStudio: nothing, others: a non-empty API key).
@@ -570,7 +586,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             c.gridx = 1;
             c.gridy = 2;
             c.gridwidth = 1;
-            settingsPanel_GPT.add(getApiKeyText(), c);
+            settingsPanel_GPT.add(getApiKeyAndStatus(), c);
 
             // RAG checkbox next to the API key field
             c.weightx = 0;
@@ -633,7 +649,8 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
                 }
             }
         }
-        getApiKeyText().setVisible(showApiKey);
+        // WFC-US12 (#17): hide the wrapping container (text field + status label) together.
+        getApiKeyAndStatus().setVisible(showApiKey);
 
         // Model selection basierend auf gespeicherter Konfiguration setzen
         for (int i = 0; i < modelComboBox.getItemCount(); i++) {
@@ -656,8 +673,153 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             apiKeyText = new JTextField();
             apiKeyText.setColumns(40);
             apiKeyText.setEnabled(true);
+            // WFC-US12 (#17): instant format check on every keystroke,
+            // provider-side validation when the user leaves the field.
+            apiKeyText.getDocument().addDocumentListener(new DocumentListener() {
+                @Override public void insertUpdate(DocumentEvent e)  { runApiKeyFormatCheck(); }
+                @Override public void removeUpdate(DocumentEvent e)  { runApiKeyFormatCheck(); }
+                @Override public void changedUpdate(DocumentEvent e) { runApiKeyFormatCheck(); }
+            });
+            apiKeyText.addFocusListener(new FocusAdapter() {
+                @Override public void focusLost(FocusEvent e) { runApiKeyApiCheck(); }
+            });
         }
         return apiKeyText;
+    }
+
+    /**
+     * WFC-US12 (#17): small status label next to the API key field.
+     * Shows a coloured Unicode glyph plus a one-word state.
+     */
+    private JLabel getApiKeyStatusLabel() {
+        if (apiKeyStatusLabel == null) {
+            apiKeyStatusLabel = new JLabel(" ");
+            apiKeyStatusLabel.setPreferredSize(new Dimension(120, 20));
+        }
+        return apiKeyStatusLabel;
+    }
+
+    /**
+     * WFC-US12 (#17): wraps the API key text field together with the status label
+     * so they sit side by side inside the GPT panel grid cell.
+     */
+    private JPanel getApiKeyAndStatus() {
+        if (apiKeyContainer == null) {
+            apiKeyContainer = new JPanel();
+            apiKeyContainer.setLayout(new BoxLayout(apiKeyContainer, BoxLayout.X_AXIS));
+            apiKeyContainer.add(getApiKeyText());
+            apiKeyContainer.add(Box.createHorizontalStrut(8));
+            apiKeyContainer.add(getApiKeyStatusLabel());
+        }
+        return apiKeyContainer;
+    }
+
+    /**
+     * WFC-US12 (#17): synchronous format-only check on the API key. Runs on
+     * every keystroke and on provider change. No network call here.
+     */
+    private void runApiKeyFormatCheck() {
+        JLabel status   = getApiKeyStatusLabel();
+        String key      = (apiKeyText == null) ? "" : apiKeyText.getText();
+        String provider = (String) getProviderComboBox().getSelectedItem();
+
+        // lmStudio needs no key, and an empty key is shown as a neutral state.
+        if ("lmStudio".equals(provider) || key == null || key.trim().isEmpty()) {
+            status.setText(" ");
+            status.setForeground(Color.GRAY);
+            status.setToolTipText(null);
+            return;
+        }
+
+        boolean formatOk;
+        if ("openAi".equals(provider)) {
+            formatOk = key.startsWith("sk-") && key.length() >= 20;
+        } else if ("gemini".equals(provider)) {
+            formatOk = key.startsWith("AIza") && key.length() >= 30;
+        } else {
+            formatOk = true;
+        }
+
+        if (!formatOk) {
+            status.setText("⚠ " + Messages.getString("Configuration.GPT.apikey.status.format.bad"));
+            status.setForeground(new Color(192, 128, 0));
+            status.setToolTipText(Messages.getString("Configuration.GPT.apikey.status.tooltip.format"));
+        } else {
+            // Format looks fine — leave the verdict to the API check on focus loss.
+            status.setText(" ");
+            status.setForeground(Color.GRAY);
+            status.setToolTipText(null);
+        }
+    }
+
+    /**
+     * WFC-US12 (#17): asynchronous provider-side check. Triggered when the user
+     * leaves the API key field. Calls a lightweight provider endpoint with a
+     * short timeout and reflects the verdict in the status label.
+     */
+    private void runApiKeyApiCheck() {
+        final JLabel status = getApiKeyStatusLabel();
+        final String key      = (apiKeyText == null) ? "" : apiKeyText.getText().trim();
+        final String provider = (String) getProviderComboBox().getSelectedItem();
+
+        if ("lmStudio".equals(provider) || key.isEmpty()) {
+            return;
+        }
+
+        String  urlStr;
+        boolean useBearer;
+        switch (provider) {
+            case "openAi":
+                urlStr    = "https://api.openai.com/v1/models";
+                useBearer = true;
+                break;
+            case "gemini":
+                urlStr    = "https://generativelanguage.googleapis.com/v1beta/models?key="
+                        + URLEncoder.encode(key, StandardCharsets.UTF_8);
+                useBearer = false;
+                break;
+            default:
+                return;
+        }
+
+        status.setText("⧗ " + Messages.getString("Configuration.GPT.apikey.status.checking"));
+        status.setForeground(Color.GRAY);
+        status.setToolTipText(null);
+
+        final String  url        = urlStr;
+        final boolean withBearer = useBearer;
+        new Thread(() -> {
+            int    code = -1;
+            String err  = null;
+            try {
+                HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+                conn.setRequestMethod("GET");
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(5000);
+                if (withBearer) {
+                    conn.setRequestProperty("Authorization", "Bearer " + key);
+                }
+                code = conn.getResponseCode();
+            } catch (Exception ex) {
+                err = ex.getClass().getSimpleName() + ": " + ex.getMessage();
+            }
+            final int    fCode = code;
+            final String fErr  = err;
+            SwingUtilities.invokeLater(() -> {
+                if (fCode == 200) {
+                    status.setText("✓ " + Messages.getString("Configuration.GPT.apikey.status.ok"));
+                    status.setForeground(new Color(0, 128, 0));
+                    status.setToolTipText(Messages.getString("Configuration.GPT.apikey.status.tooltip.ok"));
+                } else {
+                    status.setText("✗ " + Messages.getString("Configuration.GPT.apikey.status.invalid"));
+                    status.setForeground(Color.RED);
+                    String tt = Messages.getString("Configuration.GPT.apikey.status.tooltip.invalid");
+                    if (fErr != null)     tt += " — " + fErr;
+                    else if (fCode > 0)   tt += " (HTTP " + fCode + ")";
+                    status.setToolTipText(tt);
+                }
+            });
+        }).start();
     }
 
     private JTextArea getPromptText() {
