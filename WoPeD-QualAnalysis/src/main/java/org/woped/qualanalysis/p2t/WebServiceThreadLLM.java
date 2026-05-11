@@ -46,16 +46,39 @@ public class WebServiceThreadLLM extends Thread {
         IEditor editor = paraphrasingPanel.getEditor();
         paraphrasingPanel.showLoadingAnimation(true);
 
-        String url = "http://localhost:8080/p2t/generateTextLLM";
+        // Build URL from configured T2P-LLM service settings (host/port/URI).
+        // WFC-US8 (#11): previously hard-coded http://localhost:8080/p2t/generateTextLLM,
+        // which ignored the LLM service fields the user sees in the configuration dialog.
+        String rawHost = ConfigurationManager.getConfiguration().getT2PLlmServiceHost();
+        int port       = ConfigurationManager.getConfiguration().getT2PLlmServicePort();
+        String rawUri  = ConfigurationManager.getConfiguration().getT2PLlmServiceUri();
 
-        // This URL parameter is prepared for the go-live of the LLM-based Process2Text service
-        /*String url =
-                "http://"
-                        + ConfigurationManager.getConfiguration().getProcess2TextServerHost()
-                        + ":"
-                        + ConfigurationManager.getConfiguration().getProcess2TextServerPort()
-                        + ConfigurationManager.getConfiguration().getProcess2TextServerURI()
-                        + "/generateTextLLM";*/
+        if (rawHost == null) rawHost = "";
+        if (rawUri  == null) rawUri  = "";
+        rawHost = rawHost.trim();
+        rawUri  = rawUri.trim();
+
+        // Fallback: keep legacy localhost endpoint reachable for dev when no host is configured.
+        if (rawHost.isEmpty()) {
+            rawHost = "localhost";
+            if (port <= 0) port = 8080;
+            if (rawUri.isEmpty()) rawUri = "/p2t";
+        }
+
+        // Respect explicit scheme in the host field; otherwise pick https for port 443, http for the rest.
+        boolean hostHasScheme = rawHost.startsWith("http://") || rawHost.startsWith("https://");
+        String scheme   = hostHasScheme ? "" : ((port == 443) ? "https://" : "http://");
+        String portPart = (port > 0) ? ":" + port : "";
+
+        // Normalize URI: ensure leading slash, strip trailing slash before appending endpoint.
+        String normalizedUri = rawUri.isEmpty()
+                ? ""
+                : (rawUri.startsWith("/") ? rawUri : "/" + rawUri);
+        if (normalizedUri.endsWith("/")) {
+            normalizedUri = normalizedUri.substring(0, normalizedUri.length() - 1);
+        }
+
+        String url = scheme + rawHost + portPart + normalizedUri + "/generateTextLLM";
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         new PNMLExport().saveToStream(editor, stream);
@@ -63,12 +86,19 @@ public class WebServiceThreadLLM extends Thread {
         String output;
 
         try {
+            // Guard against unset configuration values before URL-encoding (WFC-US8 #11):
+            // previously a missing GPT model selection caused NullPointerException in URLEncoder.
+            if (apiKey   == null) apiKey   = "";
+            if (prompt   == null) prompt   = "";
+            if (gptModel == null) gptModel = "";
+            if (provider == null) provider = "";
+
             // Encode URL parameters
             String encodedApiKey = URLEncoder.encode(apiKey, StandardCharsets.UTF_8);
             String encodedPrompt = URLEncoder.encode(prompt, StandardCharsets.UTF_8);
             String encodedGptModel = URLEncoder.encode(gptModel, StandardCharsets.UTF_8);
             String encodedProvider = URLEncoder.encode(provider, StandardCharsets.UTF_8);
-            String encodeduseRag = URLEncoder.encode(useRag, StandardCharsets.UTF_8); 
+            String encodeduseRag = URLEncoder.encode(useRag, StandardCharsets.UTF_8);
             // Construct URL with parameters
             String urlWithParams = String.format("%s?apiKey=%s&prompt=%s&gptModel=%s&provider=%s&useRag=%s",
                     url, encodedApiKey, encodedPrompt, encodedGptModel, encodedProvider, encodeduseRag);
