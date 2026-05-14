@@ -17,6 +17,7 @@ import org.pushingpixels.flamingo.api.common.icon.ResizableIcon;
 import org.pushingpixels.flamingo.api.common.popup.JCommandPopupMenu;
 import org.pushingpixels.flamingo.api.common.popup.JPopupPanel;
 import org.pushingpixels.flamingo.api.common.popup.PopupPanelCallback;
+import org.pushingpixels.flamingo.api.ribbon.JRibbon;
 import org.pushingpixels.flamingo.api.ribbon.JRibbonBand;
 import org.pushingpixels.flamingo.api.ribbon.RibbonContextualTaskGroup;
 import org.pushingpixels.flamingo.api.ribbon.RibbonElementPriority;
@@ -107,6 +108,21 @@ public class CoverabilityGraphRibbonMenu {
    */
   public RibbonTask getDefaultTask() {
     return graphTask;
+  }
+
+  /** Adds the coverability contextual group to the given ribbon. */
+  public void registerWithRibbon(JRibbon ribbon) {
+    ribbon.addContextualTaskGroup(contextGroup);
+  }
+
+  /** Shows or hides the coverability contextual group on the given ribbon. */
+  public void setVisibleOnRibbon(JRibbon ribbon, boolean visible) {
+    ribbon.setVisible(contextGroup, visible);
+  }
+
+  /** Selects the default coverability task on the given ribbon. */
+  public void selectDefaultTaskOnRibbon(JRibbon ribbon) {
+    ribbon.setSelectedTask(graphTask);
   }
 
   private RibbonContextualTaskGroup createContextualGroup() {

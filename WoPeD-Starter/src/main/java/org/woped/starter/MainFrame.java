@@ -225,7 +225,7 @@ public class MainFrame extends JRibbonFrame implements IUserInterface {
 
     // ribbon controls for coverability graph are outsourced in module CoverabilityGraph
     coverabilityGraphExtension = new CoverabilityGraphRibbonMenu(mediator);
-    getRibbon().addContextualTaskGroup(coverabilityGraphExtension.getContextGroup());
+    coverabilityGraphExtension.registerWithRibbon(getRibbon());
 
     registerEventProcessor(mediator);
     VisualController.getInstance()
@@ -2913,10 +2913,10 @@ public class MainFrame extends JRibbonFrame implements IUserInterface {
     }
 
     private void setCoverabilityGraphTaskVisible(boolean visible) {
-      getRibbon().setVisible(coverabilityGraphExtension.getContextGroup(), visible);
+      coverabilityGraphExtension.setVisibleOnRibbon(getRibbon(), visible);
 
       if (visible) {
-        getRibbon().setSelectedTask(coverabilityGraphExtension.getDefaultTask());
+        coverabilityGraphExtension.selectDefaultTaskOnRibbon(getRibbon());
       }
     }
   }
