@@ -572,12 +572,18 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             c.fill = GridBagConstraints.HORIZONTAL;
             settingsPanel_GPT.add(getModelComboBox(), c);
 
-            c.weightx = 0;
-            c.gridx = 2;
-            c.gridy = 1;
-            c.fill = GridBagConstraints.NONE;
-            c.insets = new Insets(2, 0, 2, 10);
-            settingsPanel_GPT.add(getFetchGPTModelsButton(), c);
+            // WFC-US23 (#28): the "GPT-Modelle abrufen" button is hidden from
+            // the UI per Prof. Freytag's feedback on 2026-05-11. Model fetching
+            // now runs automatically when the dialog opens (WFC-US6) and on
+            // provider change (WFC-US5). The block below is left commented out
+            // so it can be re-enabled cleanly (e.g. as an icon button in
+            // WFC-US24).
+            // c.weightx = 0;
+            // c.gridx = 2;
+            // c.gridy = 1;
+            // c.fill = GridBagConstraints.NONE;
+            // c.insets = new Insets(2, 0, 2, 10);
+            // settingsPanel_GPT.add(getFetchGPTModelsButton(), c);
 
             // API Key (Row 2) — Label als Variable speichern für spätere Referenz
             JLabel apiKeyLabel = new JLabel(Messages.getString("Configuration.GPT.apikey.Title"));
