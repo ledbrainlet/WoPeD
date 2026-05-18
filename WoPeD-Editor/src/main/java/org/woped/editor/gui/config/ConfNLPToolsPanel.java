@@ -304,7 +304,9 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
     }
 
     private JLabel createSettingsLabel(String text) {
-        return alignSettingsLabel(new JLabel(text));
+        JLabel label = new JLabel(text);
+        label.setHorizontalAlignment(JLabel.RIGHT);
+        return alignSettingsLabel(label);
     }
 
     private JPanel getSettingsPanel() {
@@ -607,7 +609,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             c.gridx = 0;
             c.gridy = 0;
             c.gridwidth = 1;
-            settingsPanel_GPT.add(getProviderLabel(), c);
+            settingsPanel_GPT.add(alignSettingsLabel(getProviderLabel()), c);
 
             c.weightx = 1;
             c.gridx = 1;
@@ -622,7 +624,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             c.gridy = 1;
             c.gridwidth = 1;
             c.fill = GridBagConstraints.NONE;
-            settingsPanel_GPT.add(new JLabel(Messages.getString("Configuration.GPT.model.Title")), c);
+            settingsPanel_GPT.add(createSettingsLabel(Messages.getString("Configuration.GPT.model.Title")), c);
 
             c.weightx = 1;
             c.gridx = 1;
@@ -645,8 +647,8 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             // settingsPanel_GPT.add(getFetchGPTModelsButton(), c);
 
             // API Key (Row 2) — Label als Variable speichern für spätere Referenz
-            JLabel apiKeyLabel = new JLabel(Messages.getString("Configuration.GPT.apikey.Title"));
-            c.weightx = 1;
+            JLabel apiKeyLabel = createSettingsLabel(Messages.getString("Configuration.GPT.apikey.Title"));
+            c.weightx = 0;
             c.gridx = 0;
             c.gridy = 2;
             c.insets = new Insets(2, 0, 2, 0);
@@ -764,11 +766,12 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
 
     /**
      * WFC-US12 (#17): small status label next to the API key field.
-     * Shows a coloured Unicode glyph plus a one-word state.
+     * Shows a small status icon plus a one-word state.
      */
     private JLabel getApiKeyStatusLabel() {
         if (apiKeyStatusLabel == null) {
             apiKeyStatusLabel = new JLabel(" ");
+            apiKeyStatusLabel.setIconTextGap(4);
             apiKeyStatusLabel.setPreferredSize(new Dimension(120, 20));
         }
         return apiKeyStatusLabel;
@@ -801,6 +804,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         // lmStudio needs no key, and an empty key is shown as a neutral state.
         if ("lmStudio".equals(provider) || key == null || key.trim().isEmpty()) {
             status.setText(" ");
+            status.setIcon(null);
             status.setForeground(Color.GRAY);
             status.setToolTipText(null);
             return;
@@ -816,12 +820,14 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         }
 
         if (!formatOk) {
-            status.setText("⚠ " + Messages.getString("Configuration.GPT.apikey.status.format.bad"));
+            status.setIcon(Messages.getImageIcon("Configuration.GPT.apikey.status.format.bad"));
+            status.setText(Messages.getString("Configuration.GPT.apikey.status.format.bad"));
             status.setForeground(new Color(192, 128, 0));
             status.setToolTipText(Messages.getString("Configuration.GPT.apikey.status.tooltip.format"));
         } else {
-            // Format looks fine — leave the verdict to the API check on focus loss.
+            // Format looks fine - leave the verdict to the API check on focus loss.
             status.setText(" ");
+            status.setIcon(null);
             status.setForeground(Color.GRAY);
             status.setToolTipText(null);
         }
@@ -857,7 +863,8 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
                 return;
         }
 
-        status.setText("⧗ " + Messages.getString("Configuration.GPT.apikey.status.checking"));
+        status.setIcon(Messages.getImageIcon("Configuration.GPT.apikey.status.checking"));
+        status.setText(Messages.getString("Configuration.GPT.apikey.status.checking"));
         status.setForeground(Color.GRAY);
         status.setToolTipText(null);
 
@@ -882,14 +889,16 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             final String fErr  = err;
             SwingUtilities.invokeLater(() -> {
                 if (fCode == 200) {
-                    status.setText("✓ " + Messages.getString("Configuration.GPT.apikey.status.ok"));
+                    status.setIcon(Messages.getImageIcon("Configuration.GPT.apikey.status.ok"));
+                    status.setText(Messages.getString("Configuration.GPT.apikey.status.ok"));
                     status.setForeground(new Color(0, 128, 0));
                     status.setToolTipText(Messages.getString("Configuration.GPT.apikey.status.tooltip.ok"));
                 } else {
-                    status.setText("✗ " + Messages.getString("Configuration.GPT.apikey.status.invalid"));
+                    status.setIcon(Messages.getImageIcon("Configuration.GPT.apikey.status.invalid"));
+                    status.setText(Messages.getString("Configuration.GPT.apikey.status.invalid"));
                     status.setForeground(Color.RED);
                     String tt = Messages.getString("Configuration.GPT.apikey.status.tooltip.invalid");
-                    if (fErr != null)     tt += " — " + fErr;
+                    if (fErr != null)     tt += " - " + fErr;
                     else if (fCode > 0)   tt += " (HTTP " + fCode + ")";
                     status.setToolTipText(tt);
                 }
@@ -964,6 +973,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         if (resetButton == null) {
             resetButton = new WopedButton();
             resetButton.setText(Messages.getString("Configuration.GPT.standard.Title"));
+            resetButton.setIcon(Messages.getImageIcon("Button.SetToDefault"));
             resetButton.setPreferredSize(new Dimension(200, 25));
             resetButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
@@ -978,6 +988,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         if (fetchGPTModelsButton == null) {
             fetchGPTModelsButton = new WopedButton();
             fetchGPTModelsButton.setText(Messages.getString("P2T.fetchmodels.button"));
+            fetchGPTModelsButton.setIcon(Messages.getImageIcon("Action.Browser.Refresh"));
             fetchGPTModelsButton.setPreferredSize(new Dimension(200, 25));
             fetchGPTModelsButton.addActionListener(e -> fetchAndFillModels());
         }
@@ -1176,6 +1187,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         if (defaultButton == null) {
             defaultButton = new WopedButton();
             defaultButton.setText(Messages.getTitle("Button.SetToDefault"));
+            defaultButton.setIcon(Messages.getImageIcon("Button.SetToDefault"));
             defaultButton.setPreferredSize(new Dimension(200, 25));
             defaultButton.addActionListener(e -> setDefaultValues());
         }
@@ -1186,6 +1198,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         if (defaultButton_T2P == null) {
             defaultButton_T2P = new WopedButton();
             defaultButton_T2P.setText(Messages.getTitle("Button.SetToDefault"));
+            defaultButton_T2P.setIcon(Messages.getImageIcon("Button.SetToDefault"));
             defaultButton_T2P.setPreferredSize(new Dimension(200, 25));
             defaultButton_T2P.addActionListener(e -> setDefaultValues_T2P());
         }
@@ -1271,6 +1284,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         if (defaultButton_LLM == null) {
             defaultButton_LLM = new WopedButton();
             defaultButton_LLM.setText(Messages.getTitle("Button.SetToDefault"));
+            defaultButton_LLM.setIcon(Messages.getImageIcon("Button.SetToDefault"));
             defaultButton_LLM.setPreferredSize(new Dimension(200, 25));
             defaultButton_LLM.addActionListener(e -> setDefaultValues_LLM());
         }
