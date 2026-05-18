@@ -498,9 +498,16 @@ public class T2PUI extends JDialog {
                 String escapedText = text.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r",
                         "\\r");
                 String llmProviderApiValue = mapLlmProviderToApiValue(provider);
+                // WFC-US22 (#27): forward the user-configured T2P prompt so the server can
+                // use it instead of (or in addition to) its own default template. Falls back
+                // to "" if no prompt is set so the JSON stays well-formed.
+                String t2pPrompt = ConfigurationManager.getConfiguration().getGptPromptT2P();
+                if (t2pPrompt == null) t2pPrompt = "";
+                String escapedPrompt = t2pPrompt.replace("\\", "\\\\").replace("\"", "\\\"")
+                        .replace("\n", "\\n").replace("\r", "\\r");
                 String jsonInputString = String.format(
-                        "{\"text\":\"%s\",\"api_key\":\"%s\",\"llm_provider\":\"%s\"}",
-                        escapedText, apiKey, llmProviderApiValue);
+                        "{\"text\":\"%s\",\"api_key\":\"%s\",\"llm_provider\":\"%s\",\"prompt\":\"%s\"}",
+                        escapedText, apiKey, llmProviderApiValue, escapedPrompt);
 
                 // Send the request
                 try (OutputStream outputStream = connection.getOutputStream()) {

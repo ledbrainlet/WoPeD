@@ -38,7 +38,9 @@ import org.woped.gui.lookAndFeel.WopedButton;
 import org.woped.gui.translations.Messages;
 
 public class ConfNLPToolsPanel extends AbstractConfPanel {
-    
+    private static final int SETTINGS_LABEL_WIDTH = 155;
+    private static final int SETTINGS_LABEL_RIGHT_PADDING = 10;
+
     // Enable automatic intermediate certificate fetching
     static {
         // Enable AIA (Authority Information Access) certificate fetching
@@ -80,6 +82,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
     private JCheckBox ragOptionBox = null;
     private WopedButton resetButton = null;
     private JTextArea promptText = null;
+    private JTextArea promptTextT2P = null;
     private WopedButton fetchGPTModelsButton = null;
     private WopedButton checkConnectionButton = null;
     private JComboBox<String> modelComboBox = new JComboBox<String>();
@@ -149,6 +152,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         ConfigurationManager.getConfiguration().setGptApiKey(getApiKeyText().getText());
         ConfigurationManager.getConfiguration().setGptShowAgain(getShowAgainBox().isSelected());
         ConfigurationManager.getConfiguration().setGptPrompt(getPromptText().getText());
+        ConfigurationManager.getConfiguration().setGptPromptT2P(getPromptTextT2P().getText());
         ConfigurationManager.getConfiguration().setT2PLlmServiceHost(getServiceUrlText_LLM().getText());
         if (getServicePortText_LLM().getText().isEmpty()) {
             ConfigurationManager.getConfiguration().setT2PLlmServicePort(0);
@@ -188,6 +192,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             getApiKeyText().setText(ConfigurationManager.getConfiguration().getGptApiKey());
             getShowAgainBox().setSelected(ConfigurationManager.getConfiguration().getGptShowAgain());
             getPromptText().setText(ConfigurationManager.getConfiguration().getGptPrompt());
+            getPromptTextT2P().setText(ConfigurationManager.getConfiguration().getGptPromptT2P());
             getServiceUrlText_LLM().setText(ConfigurationManager.getConfiguration().getT2PLlmServiceHost());
             getServicePortText_LLM().setText("" + ConfigurationManager.getConfiguration().getT2PLlmServicePort());
             getServiceUriText_LLM().setText(ConfigurationManager.getConfiguration().getT2PLlmServiceUri());
@@ -289,6 +294,19 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         return enabledPanel;
     }
 
+    private JLabel alignSettingsLabel(JLabel label) {
+        Dimension preferredSize = label.getPreferredSize();
+        Dimension fixedSize = new Dimension(SETTINGS_LABEL_WIDTH, preferredSize.height);
+        label.setPreferredSize(fixedSize);
+        label.setMinimumSize(fixedSize);
+        label.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, SETTINGS_LABEL_RIGHT_PADDING));
+        return label;
+    }
+
+    private JLabel createSettingsLabel(String text) {
+        return alignSettingsLabel(new JLabel(text));
+    }
+
     private JPanel getSettingsPanel() {
         if (settingsPanel == null) {
             settingsPanel = new JPanel();
@@ -300,48 +318,66 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             settingsPanel.setBorder(BorderFactory.createCompoundBorder(
                     BorderFactory.createTitledBorder(Messages.getString("Configuration.P2T.Settings.Panel.Title")),
                     BorderFactory.createEmptyBorder(10, 10, 10, 10)));
-            c.weightx = 1;
+            c.weightx = 0;
             c.gridx = 0;
             c.gridy = 0;
-            settingsPanel.add(getServerURLLabel(), c);
+            settingsPanel.add(alignSettingsLabel(getServerURLLabel()), c);
 
             c.weightx = 1;
             c.gridx = 1;
             c.gridy = 0;
             c.gridwidth = 2;
+            c.fill = GridBagConstraints.HORIZONTAL;
             settingsPanel.add(getServerURLText(), c);
+            c.fill = GridBagConstraints.NONE;
 
-            c.weightx = 1;
+            c.weightx = 0;
             c.gridx = 0;
             c.gridy = 1;
             c.gridwidth = 1;
-            settingsPanel.add(getServerPortLabel(), c);
+            settingsPanel.add(alignSettingsLabel(getServerPortLabel()), c);
 
-            c.weightx = 1;
+            c.weightx = 0;
             c.gridx = 1;
             c.gridy = 1;
             settingsPanel.add(getServerPortText(), c);
 
-            c.weightx = 1;
+            c.weightx = 0;
             c.gridx = 2;
             c.gridy = 1;
             settingsPanel.add(getTestButton(), c);
 
-            c.weightx = 1;
+            c.weightx = 0;
             c.gridx = 0;
             c.gridy = 2;
-            settingsPanel.add(getManagerPathLabel(), c);
+            settingsPanel.add(alignSettingsLabel(getManagerPathLabel()), c);
 
             c.weightx = 1;
             c.gridx = 1;
             c.gridy = 2;
             c.gridwidth = 2;
+            c.fill = GridBagConstraints.HORIZONTAL;
             settingsPanel.add(getManagerPathText(), c);
+            c.fill = GridBagConstraints.NONE;
 
-            c.weightx = 1;
+            c.weightx = 0;
             c.gridx = 3;
             c.gridy = 1;
             settingsPanel.add(getDefaultButton(), c);
+
+            // WFC-US22 (#27): P2T-Prompt under the server settings
+            c.weightx = 0;
+            c.gridx = 0;
+            c.gridy = 3;
+            c.gridwidth = 1;
+            settingsPanel.add(createSettingsLabel(Messages.getString("Configuration.GPT.prompt.P2T.Title")), c);
+
+            c.weightx = 1;
+            c.gridx = 1;
+            c.gridy = 3;
+            c.gridwidth = 3;
+            settingsPanel.add(getPromptTextScrollPane(), c);
+
         }
 
         settingsPanel.setVisible(getUseBox().isSelected());
@@ -359,48 +395,53 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             settingsPanel_T2P.setBorder(BorderFactory.createCompoundBorder(
                     BorderFactory.createTitledBorder(Messages.getString("Configuration.T2P.Settings.Panel.Title_NLP")),
                     BorderFactory.createEmptyBorder(10, 10, 10, 10)));
-            c.weightx = 1;
+            c.weightx = 0;
             c.gridx = 0;
             c.gridy = 0;
-            settingsPanel_T2P.add(getServerURLLabel_T2P(), c);
+            settingsPanel_T2P.add(alignSettingsLabel(getServerURLLabel_T2P()), c);
 
             c.weightx = 1;
             c.gridx = 1;
             c.gridy = 0;
             c.gridwidth = 2;
+            c.fill = GridBagConstraints.HORIZONTAL;
             settingsPanel_T2P.add(getServerURLText_T2P(), c);
+            c.fill = GridBagConstraints.NONE;
 
-            c.weightx = 1;
+            c.weightx = 0;
             c.gridx = 0;
             c.gridy = 1;
             c.gridwidth = 1;
-            settingsPanel_T2P.add(getServerPortLabel_T2P(), c);
+            settingsPanel_T2P.add(alignSettingsLabel(getServerPortLabel_T2P()), c);
 
-            c.weightx = 1;
+            c.weightx = 0;
             c.gridx = 1;
             c.gridy = 1;
             settingsPanel_T2P.add(getServerPortText_T2P(), c);
 
-            c.weightx = 1;
+            c.weightx = 0;
             c.gridx = 2;
             c.gridy = 1;
             settingsPanel_T2P.add(getTestButton_T2P(), c);
 
-            c.weightx = 1;
+            c.weightx = 0;
             c.gridx = 0;
             c.gridy = 2;
-            settingsPanel_T2P.add(getManagerPathLabel_T2P(), c);
+            settingsPanel_T2P.add(alignSettingsLabel(getManagerPathLabel_T2P()), c);
 
             c.weightx = 1;
             c.gridx = 1;
             c.gridy = 2;
             c.gridwidth = 2;
+            c.fill = GridBagConstraints.HORIZONTAL;
             settingsPanel_T2P.add(getManagerPathText_T2P(), c);
+            c.fill = GridBagConstraints.NONE;
 
-            c.weightx = 1;
+            c.weightx = 0;
             c.gridx = 3;
             c.gridy = 1;
             settingsPanel_T2P.add(getDefaultButton_T2P(), c);
+
         }
 
         settingsPanel_T2P.setVisible(getUseBox_T2P().isSelected());
@@ -419,51 +460,69 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
                     BorderFactory.createTitledBorder(Messages.getString("Configuration.T2P.Settings.Panel.Title_LLM")),
                     BorderFactory.createEmptyBorder(10, 10, 10, 10)));
 
-            c.weightx = 1;
+            c.weightx = 0;
             c.gridx = 0;
             c.gridy = 0;
-            settingsPanel_LLM.add(getServiceUrlLabel_LLM(), c);
+            settingsPanel_LLM.add(alignSettingsLabel(getServiceUrlLabel_LLM()), c);
 
             c.weightx = 1;
             c.gridx = 1;
             c.gridy = 0;
             c.gridwidth = 2;
+            c.fill = GridBagConstraints.HORIZONTAL;
             settingsPanel_LLM.add(getServiceUrlText_LLM(), c);
+            c.fill = GridBagConstraints.NONE;
 
-            c.weightx = 1;
+            c.weightx = 0;
             c.gridx = 0;
             c.gridy = 1;
             c.gridwidth = 1;
-            settingsPanel_LLM.add(getServicePortLabel_LLM(), c);
+            settingsPanel_LLM.add(alignSettingsLabel(getServicePortLabel_LLM()), c);
 
-            c.weightx = 1;
+            c.weightx = 0;
             c.gridx = 1;
             c.gridy = 1;
             settingsPanel_LLM.add(getServicePortText_LLM(), c);
 
-            c.weightx = 1;
+            c.weightx = 0;
             c.gridx = 0;
             c.gridy = 2;
             c.gridwidth = 1;
-            settingsPanel_LLM.add(getServiceUriLabel_LLM(), c);
+            settingsPanel_LLM.add(alignSettingsLabel(getServiceUriLabel_LLM()), c);
 
             c.weightx = 1;
             c.gridx = 1;
             c.gridy = 2;
             c.gridwidth = 2;
+            c.fill = GridBagConstraints.HORIZONTAL;
             settingsPanel_LLM.add(getServiceUriText_LLM(), c);
+            c.fill = GridBagConstraints.NONE;
 
             // Test- und Default-Button auf die Port-Zeile, analog NLP-Panel (WFC-US1)
-            c.weightx = 1;
+            c.weightx = 0;
             c.gridx = 2;
             c.gridy = 1;
             c.gridwidth = 1;
             settingsPanel_LLM.add(getTestButton_LLM(), c);
 
-            c.weightx = 1;
+            c.weightx = 0;
             c.gridx = 3;
             c.gridy = 1;
             settingsPanel_LLM.add(getDefaultButton_LLM(), c);
+
+            // WFC-US22 (#27): T2P-Prompt under the LLM server settings
+            c.weightx = 0;
+            c.gridx = 0;
+            c.gridy = 3;
+            c.gridwidth = 1;
+            settingsPanel_LLM.add(createSettingsLabel(Messages.getString("Configuration.GPT.prompt.T2P.Title")), c);
+
+            c.weightx = 1;
+            c.gridx = 1;
+            c.gridy = 3;
+            c.gridwidth = 3;
+            settingsPanel_LLM.add(getPromptTextScrollPaneT2P(), c);
+
         }
 
         settingsPanel_LLM.setVisible(getUseBox().isSelected());
@@ -608,40 +667,32 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             c.insets = new Insets(2, 10, 2, 10);
             settingsPanel_GPT.add(getRagOptionBox(), c);
 
-            // Prompt Extension (Row 3)
-            c.weightx = 0;
+            // WFC-US22 (#27): the T2P/P2T prompts moved into their respective
+            // server-settings panels (getSettingsPanel for P2T, getSettingsPanel_LLM
+            // for T2P LLM). GPT-Einstellungen keeps only provider/key/model.
+
+            // Show Again Checkbox (Row 3)
+            c.weightx = 1;
             c.gridx = 0;
             c.gridy = 3;
             c.gridwidth = 1;
             c.insets = new Insets(2, 0, 2, 0);
-            settingsPanel_GPT.add(new JLabel(Messages.getString("Configuration.GPT.prompt.Title")), c);
+            settingsPanel_GPT.add(getShowAgainBox(), c);
 
+            // Check Connection Button (Row 3)
             c.weightx = 1;
             c.gridx = 1;
             c.gridy = 3;
-            c.gridwidth = 2;
-            settingsPanel_GPT.add(getPromptTextScrollPane(), c);
-
-            // Show Again Checkbox (Row 4)
-            c.weightx = 1;
-            c.gridx = 0;
-            c.gridy = 4;
-            c.insets = new Insets(2, 0, 2, 0);
-            settingsPanel_GPT.add(getShowAgainBox(), c);
-
-            // Check Connection Button (Row 4)
-            c.weightx = 1;
-            c.gridx = 1;
-            c.gridy = 4;
             c.insets = new Insets(2, 0, 2, 12);
             settingsPanel_GPT.add(getCheckConnectionButton(), c);
 
-            // Reset Button (Row 4)
+            // Reset Button (Row 3)
             c.weightx = 1;
             c.gridx = 2;
-            c.gridy = 4;
+            c.gridy = 3;
             c.insets = new Insets(2, 0, 2, 10);
             settingsPanel_GPT.add(getResetButton(), c);
+
         }
 
         settingsPanel_GPT.setVisible(getUseBox().isSelected());
@@ -676,7 +727,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
 
     private JScrollPane getPromptTextScrollPane() {
         JScrollPane scrollPane = new JScrollPane(getPromptText());
-        scrollPane.setPreferredSize(new Dimension(getApiKeyText().getPreferredSize().width, 100));
+        scrollPane.setPreferredSize(new Dimension(520, 100));
         return scrollPane;
     }
 
@@ -693,7 +744,19 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
                 @Override public void changedUpdate(DocumentEvent e) { runApiKeyFormatCheck(); }
             });
             apiKeyText.addFocusListener(new FocusAdapter() {
-                @Override public void focusLost(FocusEvent e) { runApiKeyApiCheck(); }
+                @Override public void focusLost(FocusEvent e) {
+                    runApiKeyApiCheck();
+                    // WFC-US22 (#27): entering / changing the API key also
+                    // triggers a silent model fetch so the dropdown is
+                    // populated when the key changes (e.g. first-time setup).
+                    String key = apiKeyText.getText();
+                    String provider = (String) getProviderComboBox().getSelectedItem();
+                    boolean canFetch = "lmStudio".equals(provider)
+                            || (key != null && !key.trim().isEmpty());
+                    if (canFetch) {
+                        fetchAndFillModels(true);
+                    }
+                }
             });
         }
         return apiKeyText;
@@ -838,7 +901,8 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         if (promptText == null) {
             promptText = new JTextArea();
             promptText.setColumns(40);
-            promptText.setRows(5);
+            // WFC-US22 (#27): 4 rows so two prompt areas (T2P + P2T) fit comfortably.
+            promptText.setRows(4);
             promptText.setLineWrap(true);
             promptText.setWrapStyleWord(true);
             promptText.setEnabled(true);
@@ -855,6 +919,26 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
                     "Create a clearly structured and comprehensible continuous text from the given BPMN that is understandable for an uninformed reader. The text should be easy to read in the summary and contain all important content; if there are subdivided points, these are integrated into the text with suitable sentence beginnings in order to obtain a well-structured and easy-to-read text. Under no circumstances should the output contain sub-items or paragraphs, but should cover all processes in one piece!");
         }
         return promptText;
+    }
+
+    /** WFC-US22 (#27): editable T2P (Text -> Prozess) prompt template. */
+    private JTextArea getPromptTextT2P() {
+        if (promptTextT2P == null) {
+            promptTextT2P = new JTextArea();
+            promptTextT2P.setColumns(40);
+            promptTextT2P.setRows(4);
+            promptTextT2P.setLineWrap(true);
+            promptTextT2P.setWrapStyleWord(true);
+            promptTextT2P.setEnabled(true);
+            promptTextT2P.setToolTipText(Messages.getString("Configuration.GPT.prompt.T2P.tooltip"));
+        }
+        return promptTextT2P;
+    }
+
+    private JScrollPane getPromptTextScrollPaneT2P() {
+        JScrollPane sp = new JScrollPane(getPromptTextT2P());
+        sp.setPreferredSize(new Dimension(520, 100));
+        return sp;
     }
 
     public JCheckBox getRagOptionBox() {
@@ -978,6 +1062,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         getApiKeyText().setText(ConfigurationManager.getStandardConfiguration().getGptApiKey());
         getShowAgainBox().setSelected(ConfigurationManager.getStandardConfiguration().getGptShowAgain());
         getPromptText().setText(ConfigurationManager.getStandardConfiguration().getGptPrompt());
+        getPromptTextT2P().setText(ConfigurationManager.getStandardConfiguration().getGptPromptT2P());
     }
 
     private JComboBox<String> getModelComboBox() {
