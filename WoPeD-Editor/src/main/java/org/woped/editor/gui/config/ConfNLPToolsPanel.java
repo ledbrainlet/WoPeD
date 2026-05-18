@@ -215,13 +215,13 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         c.gridy = 0;
         contentPanel.add(getEnabledPanel(), c);
 
-        // P2T server settings panel hidden per WFC-US1 (Prof Freytag, 2026-05-11).
-        // Code in getSettingsPanel() / applyConfiguration() / readConfiguration()
-        // is retained for potential reactivation.
-        // c.weightx = 1;
-        // c.gridx = 0;
-        // c.gridy = 1;
-        // contentPanel.add(getSettingsPanel(), c);
+        // WFC-US21 (#26): the P2T server settings panel was hidden in WFC-US1 and
+        // re-added here after Prof. Freytag asked for the panel back (feedback
+        // on 2026-05-11, communicated via Eduardo).
+        c.weightx = 1;
+        c.gridx = 0;
+        c.gridy = 1;
+        contentPanel.add(getSettingsPanel(), c);
 
         c.weightx = 1;
         c.gridx = 0;
