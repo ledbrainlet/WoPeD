@@ -89,7 +89,6 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
     private JComboBox<String> modelComboBox = new JComboBox<String>();
 
     // Components for LLM Panel
-    private JPanel settingsPanel_LLM = null;
     private JTextField serviceUrlText_LLM = null;
     private JLabel serviceUrlLabel_LLM = null;
     private JTextField servicePortText_LLM = null;
@@ -253,16 +252,11 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         c.weightx = 1;
         c.gridx = 0;
         c.gridy = 3;
-        contentPanel.add(getSettingsPanel_LLM(), c);
-
-        c.weightx = 1;
-        c.gridx = 0;
-        c.gridy = 4;
         contentPanel.add(getGPTPanel(), c);
 
         c.fill = GridBagConstraints.VERTICAL;
         c.weighty = 1;
-        c.gridy = 5;
+        c.gridy = 4;
         contentPanel.add(new JPanel(), c);
 
         setMainPanel(contentPanel);
@@ -412,140 +406,77 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             c.insets = new Insets(2, 0, 2, 0);
 
             settingsPanel_T2P.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createTitledBorder(Messages.getString("Configuration.T2P.Settings.Panel.Title_NLP")),
+                    BorderFactory.createTitledBorder(Messages.getString("Configuration.T2P.Settings.Panel.Title")),
                     BorderFactory.createEmptyBorder(10, 10, 10, 10)));
-            c.weightx = 0;
-            c.gridx = 0;
-            c.gridy = 0;
+
+            int row = 0;
+
+            // --- NLP-Subsektion (WFC-US26): merged into a single T2P block ---
+            c.weightx = 0; c.gridx = 0; c.gridy = row; c.gridwidth = 4;
+            settingsPanel_T2P.add(new JLabel("<html><b>"
+                    + Messages.getString("Configuration.T2P.Settings.Panel.Title_NLP") + "</b></html>"), c);
+            c.gridwidth = 1; row++;
+
+            c.weightx = 0; c.gridx = 0; c.gridy = row;
             settingsPanel_T2P.add(alignSettingsLabel(getServerURLLabel_T2P()), c);
-
-            c.weightx = 1;
-            c.gridx = 1;
-            c.gridy = 0;
-            c.gridwidth = 2;
-            c.fill = GridBagConstraints.HORIZONTAL;
+            c.weightx = 1; c.gridx = 1; c.gridy = row; c.gridwidth = 2; c.fill = GridBagConstraints.HORIZONTAL;
             settingsPanel_T2P.add(getServerURLText_T2P(), c);
-            c.fill = GridBagConstraints.NONE;
+            c.fill = GridBagConstraints.NONE; c.gridwidth = 1; row++;
 
-            c.weightx = 0;
-            c.gridx = 0;
-            c.gridy = 1;
-            c.gridwidth = 1;
+            c.weightx = 0; c.gridx = 0; c.gridy = row;
             settingsPanel_T2P.add(alignSettingsLabel(getServerPortLabel_T2P()), c);
-
-            c.weightx = 0;
-            c.gridx = 1;
-            c.gridy = 1;
+            c.weightx = 0; c.gridx = 1; c.gridy = row;
             settingsPanel_T2P.add(getServerPortText_T2P(), c);
-
-            c.weightx = 0;
-            c.gridx = 2;
-            c.gridy = 1;
+            c.weightx = 0; c.gridx = 2; c.gridy = row;
             settingsPanel_T2P.add(getTestButton_T2P(), c);
-
-            c.weightx = 0;
-            c.gridx = 0;
-            c.gridy = 2;
-            settingsPanel_T2P.add(alignSettingsLabel(getManagerPathLabel_T2P()), c);
-
-            c.weightx = 1;
-            c.gridx = 1;
-            c.gridy = 2;
-            c.gridwidth = 2;
-            c.fill = GridBagConstraints.HORIZONTAL;
-            settingsPanel_T2P.add(getManagerPathText_T2P(), c);
-            c.fill = GridBagConstraints.NONE;
-
-            c.weightx = 0;
-            c.gridx = 3;
-            c.gridy = 1;
+            c.weightx = 0; c.gridx = 3; c.gridy = row;
             settingsPanel_T2P.add(getDefaultButton_T2P(), c);
+            row++;
 
+            c.weightx = 0; c.gridx = 0; c.gridy = row;
+            settingsPanel_T2P.add(alignSettingsLabel(getManagerPathLabel_T2P()), c);
+            c.weightx = 1; c.gridx = 1; c.gridy = row; c.gridwidth = 2; c.fill = GridBagConstraints.HORIZONTAL;
+            settingsPanel_T2P.add(getManagerPathText_T2P(), c);
+            c.fill = GridBagConstraints.NONE; c.gridwidth = 1; row++;
+
+            // --- LLM-Subsektion (WFC-US26) ---
+            c.weightx = 0; c.gridx = 0; c.gridy = row; c.gridwidth = 4; c.insets = new Insets(12, 0, 2, 0);
+            settingsPanel_T2P.add(new JLabel("<html><b>"
+                    + Messages.getString("Configuration.T2P.Settings.Panel.Title_LLM") + "</b></html>"), c);
+            c.insets = new Insets(2, 0, 2, 0); c.gridwidth = 1; row++;
+
+            c.weightx = 0; c.gridx = 0; c.gridy = row;
+            settingsPanel_T2P.add(alignSettingsLabel(getServiceUrlLabel_LLM()), c);
+            c.weightx = 1; c.gridx = 1; c.gridy = row; c.gridwidth = 2; c.fill = GridBagConstraints.HORIZONTAL;
+            settingsPanel_T2P.add(getServiceUrlText_LLM(), c);
+            c.fill = GridBagConstraints.NONE; c.gridwidth = 1; row++;
+
+            c.weightx = 0; c.gridx = 0; c.gridy = row;
+            settingsPanel_T2P.add(alignSettingsLabel(getServicePortLabel_LLM()), c);
+            c.weightx = 0; c.gridx = 1; c.gridy = row;
+            settingsPanel_T2P.add(getServicePortText_LLM(), c);
+            c.weightx = 0; c.gridx = 2; c.gridy = row;
+            settingsPanel_T2P.add(getTestButton_LLM(), c);
+            c.weightx = 0; c.gridx = 3; c.gridy = row;
+            settingsPanel_T2P.add(getDefaultButton_LLM(), c);
+            row++;
+
+            c.weightx = 0; c.gridx = 0; c.gridy = row;
+            settingsPanel_T2P.add(alignSettingsLabel(getServiceUriLabel_LLM()), c);
+            c.weightx = 1; c.gridx = 1; c.gridy = row; c.gridwidth = 2; c.fill = GridBagConstraints.HORIZONTAL;
+            settingsPanel_T2P.add(getServiceUriText_LLM(), c);
+            c.fill = GridBagConstraints.NONE; c.gridwidth = 1; row++;
+
+            // T2P-Prompt (WFC-US22)
+            c.weightx = 0; c.gridx = 0; c.gridy = row;
+            settingsPanel_T2P.add(createSettingsLabel(Messages.getString("Configuration.GPT.prompt.T2P.Title")), c);
+            c.weightx = 1; c.gridx = 1; c.gridy = row; c.gridwidth = 3; c.fill = GridBagConstraints.HORIZONTAL;
+            settingsPanel_T2P.add(getPromptTextScrollPaneT2P(), c);
+            c.fill = GridBagConstraints.NONE; c.gridwidth = 1;
         }
 
-        settingsPanel_T2P.setVisible(getUseBox_T2P().isSelected());
+        settingsPanel_T2P.setVisible(getUseBox().isSelected());
         return settingsPanel_T2P;
-    }
-
-    private JPanel getSettingsPanel_LLM() {
-        if (settingsPanel_LLM == null) {
-            settingsPanel_LLM = new JPanel();
-            settingsPanel_LLM.setLayout(new GridBagLayout());
-            GridBagConstraints c = new GridBagConstraints();
-            c.anchor = GridBagConstraints.WEST;
-            c.insets = new Insets(2, 0, 2, 0);
-
-            settingsPanel_LLM.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createTitledBorder(Messages.getString("Configuration.T2P.Settings.Panel.Title_LLM")),
-                    BorderFactory.createEmptyBorder(10, 10, 10, 10)));
-
-            c.weightx = 0;
-            c.gridx = 0;
-            c.gridy = 0;
-            settingsPanel_LLM.add(alignSettingsLabel(getServiceUrlLabel_LLM()), c);
-
-            c.weightx = 1;
-            c.gridx = 1;
-            c.gridy = 0;
-            c.gridwidth = 2;
-            c.fill = GridBagConstraints.HORIZONTAL;
-            settingsPanel_LLM.add(getServiceUrlText_LLM(), c);
-            c.fill = GridBagConstraints.NONE;
-
-            c.weightx = 0;
-            c.gridx = 0;
-            c.gridy = 1;
-            c.gridwidth = 1;
-            settingsPanel_LLM.add(alignSettingsLabel(getServicePortLabel_LLM()), c);
-
-            c.weightx = 0;
-            c.gridx = 1;
-            c.gridy = 1;
-            settingsPanel_LLM.add(getServicePortText_LLM(), c);
-
-            c.weightx = 0;
-            c.gridx = 0;
-            c.gridy = 2;
-            c.gridwidth = 1;
-            settingsPanel_LLM.add(alignSettingsLabel(getServiceUriLabel_LLM()), c);
-
-            c.weightx = 1;
-            c.gridx = 1;
-            c.gridy = 2;
-            c.gridwidth = 2;
-            c.fill = GridBagConstraints.HORIZONTAL;
-            settingsPanel_LLM.add(getServiceUriText_LLM(), c);
-            c.fill = GridBagConstraints.NONE;
-
-            // Test- und Default-Button auf die Port-Zeile, analog NLP-Panel (WFC-US1)
-            c.weightx = 0;
-            c.gridx = 2;
-            c.gridy = 1;
-            c.gridwidth = 1;
-            settingsPanel_LLM.add(getTestButton_LLM(), c);
-
-            c.weightx = 0;
-            c.gridx = 3;
-            c.gridy = 1;
-            settingsPanel_LLM.add(getDefaultButton_LLM(), c);
-
-            // WFC-US22 (#27): T2P-Prompt under the LLM server settings
-            c.weightx = 0;
-            c.gridx = 0;
-            c.gridy = 3;
-            c.gridwidth = 1;
-            settingsPanel_LLM.add(createSettingsLabel(Messages.getString("Configuration.GPT.prompt.T2P.Title")), c);
-
-            c.weightx = 1;
-            c.gridx = 1;
-            c.gridy = 3;
-            c.gridwidth = 3;
-            settingsPanel_LLM.add(getPromptTextScrollPaneT2P(), c);
-
-        }
-
-        settingsPanel_LLM.setVisible(getUseBox().isSelected());
-        return settingsPanel_LLM;
     }
 
     private JComboBox<String> getProviderComboBox() {
@@ -688,8 +619,8 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             // settingsPanel_GPT.add(getRagOptionBox(), c);
 
             // WFC-US22 (#27): the T2P/P2T prompts moved into their respective
-            // server-settings panels (getSettingsPanel for P2T, getSettingsPanel_LLM
-            // for T2P LLM). GPT-Einstellungen keeps only provider/key/model.
+            // server-settings panels (getSettingsPanel for P2T, getSettingsPanel_T2P
+            // for the merged T2P block, WFC-US26). GPT-Einstellungen keeps only provider/key/model.
 
             // Show Again Checkbox (Row 3)
             c.weightx = 1;
@@ -1443,7 +1374,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
                 if (response != null && response.contains("Successful")) {
                     arg[1] = "LLM";
                     JOptionPane.showMessageDialog(
-                            this.getSettingsPanel_LLM(),
+                            this.getSettingsPanel_T2P(),
                             Messages.getString("Paraphrasing.Webservice.Success.Message", arg),
                             Messages.getString("Paraphrasing.Webservice.Success.Title"),
                             JOptionPane.INFORMATION_MESSAGE);
@@ -1462,13 +1393,13 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
                     + "\n- Hostname mismatch"
                     + "\n- Java version: " + System.getProperty("java.version");
             JOptionPane.showMessageDialog(
-                    this.getSettingsPanel_LLM(),
+                    this.getSettingsPanel_T2P(),
                     errorMsg,
                     Messages.getString("Paraphrasing.Webservice.Error.Title"),
                     JOptionPane.ERROR_MESSAGE);
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(
-                    this.getSettingsPanel_LLM(),
+                    this.getSettingsPanel_T2P(),
                     Messages.getString("Paraphrasing.Webservice.Error.WebserviceException.Message", arg)
                             + "\n\n" + ex.getMessage(),
                     Messages.getString("Paraphrasing.Webservice.Error.Title"),
@@ -1553,7 +1484,6 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
                 getSettingsPanel().setVisible(jcb.isSelected());
                 getSettingsPanel_T2P().setVisible(jcb.isSelected());
                 getGPTPanel().setVisible(jcb.isSelected());
-                getSettingsPanel_LLM().setVisible(jcb.isSelected());
             }
         }
     }
