@@ -943,28 +943,28 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
 
     private void setApiKeyStatusChecking() {
         JLabel status = getApiKeyStatusLabel();
-        status.setText("\u23F3 " + Messages.getString("Configuration.GPT.apikey.status.checking"));
+        status.setText(Messages.getString("Configuration.GPT.apikey.status.checking"));
         status.setForeground(Color.GRAY);
         status.setToolTipText(null);
     }
 
     private void setApiKeyStatusOk() {
         JLabel status = getApiKeyStatusLabel();
-        status.setText("\u2705 " + Messages.getString("Configuration.GPT.apikey.status.ok"));
+        status.setText(Messages.getString("Configuration.GPT.apikey.status.ok"));
         status.setForeground(new Color(0, 128, 0));
         status.setToolTipText(Messages.getString("Configuration.GPT.apikey.status.tooltip.ok"));
     }
 
     private void setApiKeyStatusInvalid(String tooltip) {
         JLabel status = getApiKeyStatusLabel();
-        status.setText("\u274C " + Messages.getString("Configuration.GPT.apikey.status.invalid"));
+        status.setText(Messages.getString("Configuration.GPT.apikey.status.invalid"));
         status.setForeground(Color.RED);
         status.setToolTipText(tooltip);
     }
 
     private void setApiKeyStatusFormatBad() {
         JLabel status = getApiKeyStatusLabel();
-        status.setText("\u26A0 " + Messages.getString("Configuration.GPT.apikey.status.format.bad"));
+        status.setText(Messages.getString("Configuration.GPT.apikey.status.format.bad"));
         status.setForeground(new Color(192, 128, 0));
         status.setToolTipText(Messages.getString("Configuration.GPT.apikey.status.tooltip.format"));
     }
@@ -1085,7 +1085,8 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
     private WopedButton getResetButton() {
         if (resetButton == null) {
             resetButton = new WopedButton();
-            resetButton.setText("\uD83D\uDD04 " + Messages.getString("Configuration.GPT.standard.Title"));
+            resetButton.setText(Messages.getString("Configuration.GPT.standard.Title"));
+            resetButton.setIcon(Messages.getImageIcon("Button.ColorReset"));
             resetButton.setPreferredSize(new Dimension(200, 25));
             resetButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
@@ -1099,7 +1100,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
     private WopedButton getFetchGPTModelsButton() {
         if (fetchGPTModelsButton == null) {
             fetchGPTModelsButton = new WopedButton();
-            fetchGPTModelsButton.setText("\uD83D\uDD04 " + Messages.getString("P2T.fetchmodels.button"));
+            fetchGPTModelsButton.setText(Messages.getString("P2T.fetchmodels.button"));
             fetchGPTModelsButton.setPreferredSize(new Dimension(200, 25));
             fetchGPTModelsButton.addActionListener(e -> fetchAndFillModels());
         }
@@ -1109,7 +1110,8 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
     private WopedButton getCheckConnectionButton() {
         if (checkConnectionButton == null) {
             checkConnectionButton = new WopedButton();
-            checkConnectionButton.setText("\uD83D\uDD0C " + Messages.getString("Configuration.GPT.connection.Title"));
+            checkConnectionButton.setText(Messages.getString("Configuration.GPT.connection.Title"));
+            checkConnectionButton.setIcon(Messages.getImageIcon("Button.TestConnection"));
             checkConnectionButton.setMnemonic(Messages.getMnemonic("Button.TestConnection"));
             checkConnectionButton.setPreferredSize(new Dimension(170, 25));
             checkConnectionButton.addActionListener(new ActionListener() {
@@ -1262,7 +1264,8 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
     private WopedButton getTestButton() {
         if (testButton == null) {
             testButton = new WopedButton();
-            testButton.setText("\uD83D\uDD0C " + Messages.getTitle("Button.TestConnection"));
+            testButton.setText(Messages.getTitle("Button.TestConnection"));
+            testButton.setIcon(Messages.getImageIcon("Button.TestConnection"));
             testButton.setMnemonic(Messages.getMnemonic("Button.TestConnection"));
             testButton.setPreferredSize(new Dimension(160, 25));
             testButton.addActionListener(new ActionListener() {
@@ -1278,7 +1281,8 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
     private WopedButton getTestButton_T2P() {
         if (testButton_T2P == null) {
             testButton_T2P = new WopedButton();
-            testButton_T2P.setText("\uD83D\uDD0C " + Messages.getTitle("Button.TestConnection"));
+            testButton_T2P.setText(Messages.getTitle("Button.TestConnection"));
+            testButton_T2P.setIcon(Messages.getImageIcon("Button.TestConnection"));
             testButton_T2P.setMnemonic(Messages.getMnemonic("Button.TestConnection"));
             testButton_T2P.setPreferredSize(new Dimension(160, 25));
             testButton_T2P.addActionListener(new ActionListener() {
@@ -1294,7 +1298,8 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
     private WopedButton getDefaultButton() {
         if (defaultButton == null) {
             defaultButton = new WopedButton();
-            defaultButton.setText("\uD83D\uDD04 " + Messages.getTitle("Button.SetToDefault"));
+            defaultButton.setText(Messages.getTitle("Button.SetToDefault"));
+            defaultButton.setIcon(Messages.getImageIcon("Button.ColorReset"));
             defaultButton.setPreferredSize(new Dimension(200, 25));
             defaultButton.addActionListener(e -> setDefaultValues());
         }
@@ -1304,7 +1309,8 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
     private WopedButton getDefaultButton_T2P() {
         if (defaultButton_T2P == null) {
             defaultButton_T2P = new WopedButton();
-            defaultButton_T2P.setText("\uD83D\uDD04 " + Messages.getTitle("Button.SetToDefault"));
+            defaultButton_T2P.setText(Messages.getTitle("Button.SetToDefault"));
+            defaultButton_T2P.setIcon(Messages.getImageIcon("Button.ColorReset"));
             defaultButton_T2P.setPreferredSize(new Dimension(200, 25));
             defaultButton_T2P.addActionListener(e -> setDefaultValues_T2P());
         }
@@ -1373,7 +1379,8 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
     private WopedButton getTestButton_LLM() {
         if (testButton_LLM == null) {
             testButton_LLM = new WopedButton();
-            testButton_LLM.setText("\uD83D\uDD0C " + Messages.getTitle("Button.TestConnection"));
+            testButton_LLM.setText(Messages.getTitle("Button.TestConnection"));
+            testButton_LLM.setIcon(Messages.getImageIcon("Button.TestConnection"));
             testButton_LLM.setMnemonic(Messages.getMnemonic("Button.TestConnection"));
             testButton_LLM.setPreferredSize(new Dimension(160, 25));
             testButton_LLM.addActionListener(new ActionListener() {
@@ -1388,7 +1395,8 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
     private WopedButton getDefaultButton_LLM() {
         if (defaultButton_LLM == null) {
             defaultButton_LLM = new WopedButton();
-            defaultButton_LLM.setText("\uD83D\uDD04 " + Messages.getTitle("Button.SetToDefault"));
+            defaultButton_LLM.setText(Messages.getTitle("Button.SetToDefault"));
+            defaultButton_LLM.setIcon(Messages.getImageIcon("Button.ColorReset"));
             defaultButton_LLM.setPreferredSize(new Dimension(200, 25));
             defaultButton_LLM.addActionListener(e -> setDefaultValues_LLM());
         }
