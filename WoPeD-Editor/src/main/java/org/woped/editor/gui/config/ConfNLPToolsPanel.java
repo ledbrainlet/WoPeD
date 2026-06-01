@@ -40,6 +40,7 @@ import org.woped.gui.translations.Messages;
 public class ConfNLPToolsPanel extends AbstractConfPanel {
     private static final int SETTINGS_LABEL_WIDTH = 155;
     private static final int SETTINGS_LABEL_RIGHT_PADDING = 10;
+    private static final int API_KEY_VALIDATION_TIMEOUT_MILLIS = 5000;
 
     // Enable automatic intermediate certificate fetching
     static {
@@ -110,12 +111,28 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
     private JLabel apiKeyStatusLabel = null;
     private JPanel apiKeyContainer  = null;
 
+    private static class ApiKeyValidationResult {
+        private final boolean valid;
+        private final int responseCode;
+        private final String error;
+
+        private ApiKeyValidationResult(boolean valid, int responseCode, String error) {
+            this.valid = valid;
+            this.responseCode = responseCode;
+            this.error = error;
+        }
+    }
+
     public ConfNLPToolsPanel(String name) {
         super(name);
         initialize();
     }
 
     public boolean applyConfiguration() {
+        if (!validateApiKeyBeforeSave()) {
+            return false;
+        }
+
         boolean newsetting = useBox.isSelected();
         boolean oldsetting = ConfigurationManager.getConfiguration().getProcess2TextUse();
 
@@ -739,6 +756,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             apiKeyText = new JTextField();
             apiKeyText.setColumns(40);
             apiKeyText.setEnabled(true);
+            apiKeyText.setToolTipText(Messages.getString("Configuration.GPT.apikey.tooltip.required"));
             // WFC-US12 (#17): instant format check on every keystroke,
             // provider-side validation when the user leaves the field.
             apiKeyText.getDocument().addDocumentListener(new DocumentListener() {
@@ -793,40 +811,185 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
     }
 
     /**
+     * WFC-US25 (#37): when LLM Tools are enabled, OpenAI/Gemini need a key that
+     * passes the existing format check and the lightweight provider-side check.
+     */
+    private boolean validateApiKeyBeforeSave() {
+        String provider = (String) getProviderComboBox().getSelectedItem();
+        if (!getUseBox().isSelected() || !isProviderApiKeyRequired(provider)) {
+            return true;
+        }
+
+        String key = getApiKeyText().getText();
+        key = (key == null) ? "" : key.trim();
+
+        if (key.isEmpty()) {
+            setApiKeyStatusInvalid(Messages.getString("Configuration.GPT.apikey.tooltip.required"));
+            showApiKeyValidationError("Configuration.GPT.apikey.validation.required.Message", null);
+            return false;
+        }
+
+        if (!hasValidApiKeyFormat(provider, key)) {
+            setApiKeyStatusFormatBad();
+            showApiKeyValidationError("Configuration.GPT.apikey.validation.format.Message", null);
+            return false;
+        }
+
+        setApiKeyStatusChecking();
+        ApiKeyValidationResult result = validateApiKeyWithProvider(provider, key);
+        if (result.valid) {
+            setApiKeyStatusOk();
+            return true;
+        }
+
+        setApiKeyStatusInvalid(getApiKeyValidationTooltip(result));
+        showApiKeyValidationError(
+                "Configuration.GPT.apikey.validation.invalid.Message",
+                getApiKeyValidationDetail(result));
+        return false;
+    }
+
+    private boolean isProviderApiKeyRequired(String provider) {
+        return !"lmStudio".equals(provider);
+    }
+
+    private boolean hasValidApiKeyFormat(String provider, String key) {
+        if (key == null || key.trim().isEmpty()) {
+            return false;
+        }
+        if ("openAi".equals(provider)) {
+            return key.startsWith("sk-") && key.length() >= 20;
+        }
+        if ("gemini".equals(provider)) {
+            return key.startsWith("AIza") && key.length() >= 30;
+        }
+        return true;
+    }
+
+    private ApiKeyValidationResult validateApiKeyWithProvider(String provider, String key) {
+        String urlString = getApiKeyValidationUrl(provider, key);
+        if (urlString == null) {
+            return new ApiKeyValidationResult(true, 200, null);
+        }
+
+        try {
+            HttpURLConnection conn = (HttpURLConnection) new URL(urlString).openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(API_KEY_VALIDATION_TIMEOUT_MILLIS);
+            conn.setReadTimeout(API_KEY_VALIDATION_TIMEOUT_MILLIS);
+            if ("openAi".equals(provider)) {
+                conn.setRequestProperty("Authorization", "Bearer " + key);
+            }
+            int responseCode = conn.getResponseCode();
+            return new ApiKeyValidationResult(responseCode == 200, responseCode, null);
+        } catch (Exception ex) {
+            return new ApiKeyValidationResult(false, -1, ex.getClass().getSimpleName() + ": " + ex.getMessage());
+        }
+    }
+
+    private String getApiKeyValidationUrl(String provider, String key) {
+        if (provider == null) {
+            return null;
+        }
+        switch (provider) {
+            case "openAi":
+                return "https://api.openai.com/v1/models";
+            case "gemini":
+                return "https://generativelanguage.googleapis.com/v1beta/models?key="
+                        + URLEncoder.encode(key, StandardCharsets.UTF_8);
+            default:
+                return null;
+        }
+    }
+
+    private void showApiKeyValidationError(String messageKey, String detail) {
+        String message = Messages.getString(messageKey);
+        if (detail != null && !detail.isEmpty()) {
+            message += "\n\n" + detail;
+        }
+        JOptionPane.showMessageDialog(
+                this,
+                message,
+                Messages.getString("Configuration.GPT.apikey.validation.Title"),
+                JOptionPane.ERROR_MESSAGE);
+        getApiKeyText().requestFocusInWindow();
+    }
+
+    private String getApiKeyValidationTooltip(ApiKeyValidationResult result) {
+        String tooltip = Messages.getString("Configuration.GPT.apikey.status.tooltip.invalid");
+        String detail = getApiKeyValidationDetail(result);
+        if (detail != null && !detail.isEmpty()) {
+            tooltip += " - " + detail;
+        }
+        return tooltip;
+    }
+
+    private String getApiKeyValidationDetail(ApiKeyValidationResult result) {
+        if (result.error != null) {
+            return result.error;
+        }
+        if (result.responseCode > 0) {
+            return "HTTP " + result.responseCode;
+        }
+        return null;
+    }
+
+    private void clearApiKeyStatus() {
+        JLabel status = getApiKeyStatusLabel();
+        status.setText(" ");
+        status.setForeground(Color.GRAY);
+        status.setToolTipText(null);
+    }
+
+    private void setApiKeyStatusChecking() {
+        JLabel status = getApiKeyStatusLabel();
+        status.setText("\u23F3 " + Messages.getString("Configuration.GPT.apikey.status.checking"));
+        status.setForeground(Color.GRAY);
+        status.setToolTipText(null);
+    }
+
+    private void setApiKeyStatusOk() {
+        JLabel status = getApiKeyStatusLabel();
+        status.setText("\u2705 " + Messages.getString("Configuration.GPT.apikey.status.ok"));
+        status.setForeground(new Color(0, 128, 0));
+        status.setToolTipText(Messages.getString("Configuration.GPT.apikey.status.tooltip.ok"));
+    }
+
+    private void setApiKeyStatusInvalid(String tooltip) {
+        JLabel status = getApiKeyStatusLabel();
+        status.setText("\u274C " + Messages.getString("Configuration.GPT.apikey.status.invalid"));
+        status.setForeground(Color.RED);
+        status.setToolTipText(tooltip);
+    }
+
+    private void setApiKeyStatusFormatBad() {
+        JLabel status = getApiKeyStatusLabel();
+        status.setText("\u26A0 " + Messages.getString("Configuration.GPT.apikey.status.format.bad"));
+        status.setForeground(new Color(192, 128, 0));
+        status.setToolTipText(Messages.getString("Configuration.GPT.apikey.status.tooltip.format"));
+    }
+
+    /**
      * WFC-US12 (#17): synchronous format-only check on the API key. Runs on
      * every keystroke and on provider change. No network call here.
      */
     private void runApiKeyFormatCheck() {
-        JLabel status   = getApiKeyStatusLabel();
         String key      = (apiKeyText == null) ? "" : apiKeyText.getText();
         String provider = (String) getProviderComboBox().getSelectedItem();
 
         // lmStudio needs no key, and an empty key is shown as a neutral state.
-        if ("lmStudio".equals(provider) || key == null || key.trim().isEmpty()) {
-            status.setText(" ");
-            status.setForeground(Color.GRAY);
-            status.setToolTipText(null);
+        if (!isProviderApiKeyRequired(provider) || key == null || key.trim().isEmpty()) {
+            clearApiKeyStatus();
             return;
         }
 
-        boolean formatOk;
-        if ("openAi".equals(provider)) {
-            formatOk = key.startsWith("sk-") && key.length() >= 20;
-        } else if ("gemini".equals(provider)) {
-            formatOk = key.startsWith("AIza") && key.length() >= 30;
-        } else {
-            formatOk = true;
-        }
+        boolean formatOk = hasValidApiKeyFormat(provider, key.trim());
 
         if (!formatOk) {
-            status.setText("\u26A0 " + Messages.getString("Configuration.GPT.apikey.status.format.bad"));
-            status.setForeground(new Color(192, 128, 0));
-            status.setToolTipText(Messages.getString("Configuration.GPT.apikey.status.tooltip.format"));
+            setApiKeyStatusFormatBad();
         } else {
             // Format looks fine - leave the verdict to the API check on focus loss.
-            status.setText(" ");
-            status.setForeground(Color.GRAY);
-            status.setToolTipText(null);
+            clearApiKeyStatus();
         }
     }
 
@@ -836,65 +999,21 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
      * short timeout and reflects the verdict in the status label.
      */
     private void runApiKeyApiCheck() {
-        final JLabel status = getApiKeyStatusLabel();
         final String key      = (apiKeyText == null) ? "" : apiKeyText.getText().trim();
         final String provider = (String) getProviderComboBox().getSelectedItem();
 
-        if ("lmStudio".equals(provider) || key.isEmpty()) {
+        if (!isProviderApiKeyRequired(provider) || key.isEmpty() || !hasValidApiKeyFormat(provider, key)) {
             return;
         }
 
-        String  urlStr;
-        boolean useBearer;
-        switch (provider) {
-            case "openAi":
-                urlStr    = "https://api.openai.com/v1/models";
-                useBearer = true;
-                break;
-            case "gemini":
-                urlStr    = "https://generativelanguage.googleapis.com/v1beta/models?key="
-                        + URLEncoder.encode(key, StandardCharsets.UTF_8);
-                useBearer = false;
-                break;
-            default:
-                return;
-        }
-
-        status.setText("\u23F3 " + Messages.getString("Configuration.GPT.apikey.status.checking"));
-        status.setForeground(Color.GRAY);
-        status.setToolTipText(null);
-
-        final String  url        = urlStr;
-        final boolean withBearer = useBearer;
+        setApiKeyStatusChecking();
         new Thread(() -> {
-            int    code = -1;
-            String err  = null;
-            try {
-                HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
-                conn.setRequestMethod("GET");
-                conn.setConnectTimeout(5000);
-                conn.setReadTimeout(5000);
-                if (withBearer) {
-                    conn.setRequestProperty("Authorization", "Bearer " + key);
-                }
-                code = conn.getResponseCode();
-            } catch (Exception ex) {
-                err = ex.getClass().getSimpleName() + ": " + ex.getMessage();
-            }
-            final int    fCode = code;
-            final String fErr  = err;
+            ApiKeyValidationResult result = validateApiKeyWithProvider(provider, key);
             SwingUtilities.invokeLater(() -> {
-                if (fCode == 200) {
-                    status.setText("\u2705 " + Messages.getString("Configuration.GPT.apikey.status.ok"));
-                    status.setForeground(new Color(0, 128, 0));
-                    status.setToolTipText(Messages.getString("Configuration.GPT.apikey.status.tooltip.ok"));
+                if (result.valid) {
+                    setApiKeyStatusOk();
                 } else {
-                    status.setText("\u274C " + Messages.getString("Configuration.GPT.apikey.status.invalid"));
-                    status.setForeground(Color.RED);
-                    String tt = Messages.getString("Configuration.GPT.apikey.status.tooltip.invalid");
-                    if (fErr != null)     tt += " - " + fErr;
-                    else if (fCode > 0)   tt += " (HTTP " + fCode + ")";
-                    status.setToolTipText(tt);
+                    setApiKeyStatusInvalid(getApiKeyValidationTooltip(result));
                 }
             });
         }).start();
