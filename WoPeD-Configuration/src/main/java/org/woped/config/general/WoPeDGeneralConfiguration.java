@@ -1645,15 +1645,21 @@ public class WoPeDGeneralConfiguration extends WoPeDConfiguration implements IGe
 
   @Override
   public boolean getRagOption() {
+    // WFC-US15 (#24): default to false when <gpt> or <ragOption> is missing from WoPeDconfig.xml.
+    if (getConfDocument().getConfiguration().getGpt() == null) {
+      return false;
+    }
     if (getConfDocument().getConfiguration().getGpt().isSetRagOption()) {
       return getConfDocument().getConfiguration().getGpt().getRagOption();
-    } else {
-      return ConfigurationManager.getStandardConfiguration().getRagOption();
     }
+    return ConfigurationManager.getStandardConfiguration().getRagOption();
   }
 
   @Override
   public void setRagOption(boolean ragOption) {
+    if (getConfDocument().getConfiguration().getGpt() == null) {
+      getConfDocument().getConfiguration().addNewGpt();
+    }
     getConfDocument().getConfiguration().getGpt().setRagOption(ragOption);
   }
 

@@ -39,7 +39,8 @@ public class WebServiceThreadLLM extends Thread {
         prompt = ConfigurationManager.getConfiguration().getGptPrompt();
         gptModel = ConfigurationManager.getConfiguration().getGptModel();
         provider = ConfigurationManager.getConfiguration().getLlmProvider();
-        useRag = String.valueOf(ConfigurationManager.getConfiguration().getRagOption());
+        // WFC-US15 (#24): RAG is disabled; always send false regardless of stored config.
+        useRag = "false";
 
         // LoggerManager.info(Constants.EDITOR_LOGGER,"Started Fetching GPT Models");
 
@@ -92,6 +93,7 @@ public class WebServiceThreadLLM extends Thread {
             if (prompt   == null) prompt   = "";
             if (gptModel == null) gptModel = "";
             if (provider == null) provider = "";
+            if (useRag   == null) useRag   = "false";
 
             // Encode URL parameters
             String encodedApiKey = URLEncoder.encode(apiKey, StandardCharsets.UTF_8);

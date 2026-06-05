@@ -80,7 +80,6 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
     // Components for additionalPanel
     private JTextField apiKeyText = null;
     private JCheckBox showAgainBox = null;
-    private JCheckBox ragOptionBox = null;
     private WopedButton resetButton = null;
     private JTextArea promptText = null;
     private JTextArea promptTextT2P = null;
@@ -177,7 +176,8 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
                     .setT2PLlmServicePort(Integer.parseInt(getServicePortText_LLM().getText()));
         }
         ConfigurationManager.getConfiguration().setT2PLlmServiceUri(getServiceUriText_LLM().getText());
-        ConfigurationManager.getConfiguration().setRagOption(getRagOptionBox().isSelected());
+        // WFC-US15 (#24): RAG is disabled; keep persisting false so legacy configs cannot re-enable it.
+        ConfigurationManager.getConfiguration().setRagOption(false);
         if (modelComboBox.getSelectedItem() != null) {
             ConfigurationManager.getConfiguration().setGptModel(modelComboBox.getSelectedItem().toString());
         }
@@ -212,7 +212,6 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             getServiceUrlText_LLM().setText(ConfigurationManager.getConfiguration().getT2PLlmServiceHost());
             getServicePortText_LLM().setText("" + ConfigurationManager.getConfiguration().getT2PLlmServicePort());
             getServiceUriText_LLM().setText(ConfigurationManager.getConfiguration().getT2PLlmServiceUri());
-            getRagOptionBox().setSelected(ConfigurationManager.getConfiguration().getRagOption());
         } finally {
             readingConfig = false;
         }
@@ -609,14 +608,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             c.gridwidth = 1;
             settingsPanel_GPT.add(getApiKeyAndStatus(), c);
 
-            // WFC-US15 (#24): RAG is not shown in the LLM Tools UI.
-            // Keep the component and config logic so the option can be restored later.
-            // c.weightx = 0;
-            // c.gridx = 2;
-            // c.gridy = 2;
-            // c.gridwidth = 1;
-            // c.insets = new Insets(2, 10, 2, 10);
-            // settingsPanel_GPT.add(getRagOptionBox(), c);
+            // WFC-US15 (#24): RAG checkbox removed from the LLM Tools UI.
 
             // WFC-US22 (#27): the T2P/P2T prompts moved into their respective
             // server-settings panels (getSettingsPanel for P2T, getSettingsPanel_T2P
@@ -992,15 +984,6 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         JScrollPane sp = new JScrollPane(getPromptTextT2P());
         sp.setPreferredSize(new Dimension(520, 100));
         return sp;
-    }
-
-    public JCheckBox getRagOptionBox() {
-        if (ragOptionBox == null) {
-            ragOptionBox = new JCheckBox(Messages.getString("Configuration.GPT.rag.option"));
-            ragOptionBox.setEnabled(true);
-            ragOptionBox.setToolTipText(Messages.getString("Configuration.GPT.rag.option.tooltip"));
-        }
-        return ragOptionBox;
     }
 
     private JCheckBox getShowAgainBox() {
