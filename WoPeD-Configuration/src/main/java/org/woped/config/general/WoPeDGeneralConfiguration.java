@@ -1596,6 +1596,21 @@ public class WoPeDGeneralConfiguration extends WoPeDConfiguration implements IGe
     getConfDocument().getConfiguration().getGpt().setGptPrompt(prompt);
   }
 
+  // WFC-US22 (#27): T2P prompt — sent in the JSON body of the T2P LLM call.
+  @Override
+  public String getGptPromptT2P() {
+    if (getConfDocument().getConfiguration().getGpt().isSetGptPromptT2P()) {
+      return getConfDocument().getConfiguration().getGpt().getGptPromptT2P();
+    } else {
+      return ConfigurationManager.getStandardConfiguration().getGptPromptT2P();
+    }
+  }
+
+  @Override
+  public void setGptPromptT2P(String prompt) {
+    getConfDocument().getConfiguration().getGpt().setGptPromptT2P(prompt);
+  }
+
   @Override
   public void setGptUseNew(boolean useNew) {
     getConfDocument().getConfiguration().getGpt().setGptUseNew(useNew);

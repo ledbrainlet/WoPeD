@@ -202,6 +202,10 @@ public class DefaultStaticConfiguration implements IGeneralConfiguration {
   private String gptApiKey = "";
   private boolean gptShowAgain = true;
   private String gptPrompt = "Create a clearly structured and comprehensible continuous text from the given BPMN that is understandable for an uninformed reader. The text should be easy to read in the summary and contain all important content; if there are subdivided points, these are integrated into the text with suitable sentence beginnings in order to obtain a well-structured and easy-to-read text. Under no circumstances should the output contain sub-items or paragraphs, but should cover all processes in one piece!";
+  // WFC-US22 (#27): default for the T2P (Text -> Prozess) prompt sent in the
+  // JSON body of the T2P LLM call. Server may have its own template — this is
+  // what the client proposes if the user doesn't override it.
+  private String gptPromptT2P = "Convert the following text describing a business process into a workflow Petri net. Identify activities (transitions), states (places), and the control flow. Output strictly valid PNML XML only - no markdown, no commentary, no code fences.";
   private String gptProvider = "openAi";
   private boolean gptUseNew = false;
   private String gptModel = null;
@@ -1215,5 +1219,15 @@ public class DefaultStaticConfiguration implements IGeneralConfiguration {
   @Override
   public void setGptPrompt(String prompt) {
     this.gptPrompt = prompt;
+  }
+
+  @Override
+  public String getGptPromptT2P() {
+    return gptPromptT2P;
+  }
+
+  @Override
+  public void setGptPromptT2P(String prompt) {
+    this.gptPromptT2P = prompt;
   }
 }
