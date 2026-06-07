@@ -6,18 +6,22 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.LinkedHashMap;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.BorderFactory;
+import javax.swing.SwingConstants;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.text.BadLocationException;
 
 import org.woped.core.config.ConfigurationManager;
+import org.woped.core.config.DefaultStaticConfiguration;
 import org.woped.core.controller.IEditor;
 import org.woped.core.model.ModelElementContainer;
 import org.woped.core.utilities.LoggerManager;
@@ -37,7 +41,8 @@ public class P2TSideBar extends JPanel implements ActionListener {
   private JButton buttonLoad = null;
   private JButton buttonExport = null;
   private JLabel labelLoading = null;
-    private boolean threadInProgress = false;
+  private JLabel labelProvider = null;
+  private boolean threadInProgress = false;
   private boolean firstTimeDisplayed = false;
 
   /**
@@ -121,14 +126,24 @@ public class P2TSideBar extends JPanel implements ActionListener {
     this.setLayout(layout);
 
     JPanel buttonPanel = new JPanel();
-    buttonPanel.setLayout(new FlowLayout());
+    buttonPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
     buttonPanel.add(getbuttonLoad());
     buttonPanel.add(getbuttonExport());
 
-    this.add(buttonPanel, BorderLayout.NORTH);
+    JPanel northPanel = new JPanel();
+    northPanel.setLayout(new BoxLayout(northPanel, BoxLayout.Y_AXIS));
+    northPanel.add(buttonPanel);
+    northPanel.add(getLabelProvider());
+
+    this.add(northPanel, BorderLayout.NORTH);
 
     this.labelLoading =
-        new JLabel("", Messages.getImageIcon("Paraphrasing.Output.Load.Animation"), JLabel.CENTER);
+        new JLabel(
+            Messages.getString("P2T.loading"),
+            Messages.getImageIcon("Paraphrasing.Output.Load.Animation"),
+            SwingConstants.LEADING);
+    this.labelLoading.setHorizontalTextPosition(SwingConstants.RIGHT);
+    this.labelLoading.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
 
     textpane = new JEditorPane("text/html", "");
     textpane.addHyperlinkListener(
@@ -317,82 +332,95 @@ public class P2TSideBar extends JPanel implements ActionListener {
     }
   }
 
+  private JLabel getLabelProvider() {
+    if (labelProvider == null) {
+      labelProvider = new JLabel();
+      labelProvider.setFont(DefaultStaticConfiguration.DEFAULT_SMALLLABEL_FONT);
+      labelProvider.setBorder(BorderFactory.createEmptyBorder(0, 8, 4, 8));
+      updateProviderLabel();
+    }
+    return labelProvider;
+  }
+
+  /** Updates the provider/mode label from the current configuration. */
+  public void updateProviderLabel() {
+    if (labelProvider == null) {
+      return;
+    }
+
+    String provider = ConfigurationManager.getConfiguration().getLlmProvider();
+    if (provider == null || provider.isEmpty()) {
+      provider = "openAi";
+    }
+    String text =
+        Messages.getString("P2T.newservice.title")
+            + " | "
+            + Messages.getString("P2T.provider.title")
+            + ": "
+            + getProviderDisplayName(provider);
+
+    labelProvider.setText(text);
+    labelProvider.setToolTipText(text);
+  }
+
+  private String getProviderDisplayName(String provider) {
+    String key = "P2T.provider." + provider;
+    if (Messages.exists(key)) {
+      return Messages.getString(key);
+    }
+    return provider;
+  }
+
   /** Starts the webservice to get the description of the Petri-Net. */
   private void getText() {
+    updateProviderLabel();
     clean();
 
     // Ensure there are no arc weights
     if (editor.getModelProcessor().usesArcWeights()) {
-      this.textpane.setText(Messages.getString("P2T.Error.ArcWeights.title"));
-      showErrorMessage("P2T.Error.ArcWeights");
-      this.textpane.setText(Messages.getString("P2T.ArcError"));
+      showErrorInSidebar(Messages.getString("P2T.Error.ArcWeights.message"));
       return;
     }
 
     if (editor.getModelProcessor().getElementContainer().getRootElements().size() < 4) {
-      JOptionPane.showMessageDialog(
-          null,
-          Messages.getString("Paraphrasing.Webservice.NumberElements.Message"),
-          Messages.getString("Paraphrasing.Webservice.NumberElements.Title"),
-          JOptionPane.ERROR_MESSAGE);
-      this.textpane.setText(Messages.getString("P2T.SizeError"));
+      showErrorInSidebar(Messages.getString("Paraphrasing.Webservice.NumberElements.Message"));
       return;
     }
 
     if (!new QualanalysisServiceImplement(editor).isSound()) {
-      JOptionPane.showMessageDialog(
-          null,
-          Messages.getString("PetriNet.NotSound"),
-          Messages.getString("AnalysisSideBar.SoundnessAnalysis"),
-          JOptionPane.ERROR_MESSAGE);
-      this.textpane.setText(Messages.getString("P2T.SoundError"));
+      showErrorInSidebar(Messages.getString("PetriNet.NotSound"));
       return;
     }
-     //New LLM
-      WebServiceThreadLLM webService = null;
-      if(ConfigurationManager.getConfiguration().getGptUseNew()){
-      this.textpane.setText(Messages.getString("P2T.loading"));
-      this.showLoadingAnimation(true);
-      webService = new WebServiceThreadLLM(this);
-      webService.start();
-      while (!webService.getIsFinished()) {
-        try {
-          Thread.sleep(500);
-        } catch (InterruptedException e1) {
-          // ignore
-        }
-      }
-      this.textpane.setText("");
 
-      if (naturalTextParser != null) this.textpane.setText(webService.getText());
+    this.textpane.setText("<p>" + Messages.getString("P2T.loading") + "</p>");
+    this.showLoadingAnimation(true);
+    WebServiceThreadLLM webService = new WebServiceThreadLLM(this);
+    webService.start();
+    while (!webService.getIsFinished()) {
+      try {
+        Thread.sleep(500);
+      } catch (InterruptedException e1) {
+        // ignore
+      }
     }
+    this.textpane.setText("");
 
-    if(!ConfigurationManager.getConfiguration().getGptUseNew()){
-      this.textpane.setText(Messages.getString("P2T.loading"));
-      this.showLoadingAnimation(true);
-      WebServiceThread webServiceOld = new WebServiceThread(this);
-      webServiceOld.start();
-      while (!webServiceOld.getIsFinished()) {
-        try{
-          Thread.sleep(500);
-        }catch (InterruptedException e1){
-          //ignore
-        }
-      }
-      this.textpane.setText("");
-
-      if (naturalTextParser != null) this.textpane.setText(webServiceOld.getText());
+    if (webService.getErrorMessage() != null) {
+      showErrorInSidebar(webService.getErrorMessage());
+    } else if (naturalTextParser != null) {
+      this.textpane.setText(webService.getText());
     }
 
     setThreadInProgress(false);
     this.showLoadingAnimation(false);
   }
 
-  private void showErrorMessage(String resourceKey) {
-    Component parent = editor.getMediator().getUi().getComponent();
-    String message = Messages.getString(resourceKey + ".message");
-    String title = Messages.getString(resourceKey + ".title");
-    JOptionPane.showMessageDialog(parent, message, title, JOptionPane.ERROR_MESSAGE);
+  private void showErrorInSidebar(String message) {
+    String html =
+        "<p style=\"color:#b00020\">"
+            + message.replace("\n", "<br/>")
+            + "</p>";
+    this.textpane.setText(html);
   }
 
   /**
@@ -448,6 +476,9 @@ public class P2TSideBar extends JPanel implements ActionListener {
    * @param visible
    */
   public void onSideBarShown(boolean visible) {
+    if (visible) {
+      updateProviderLabel();
+    }
     // checkt, ob der Prozess sound ist, bevor er an den Webservice übergeben wird. Alle anderen
     // Prozesse werden nicht übersetzt.
     IQualanalysisService analyseService =
@@ -457,11 +488,8 @@ public class P2TSideBar extends JPanel implements ActionListener {
         getText();
         this.firstTimeDisplayed = true;
       }
-    } else
-      JOptionPane.showMessageDialog(
-          null,
-          Messages.getString("PetriNet.NotSound"),
-          Messages.getString("AnalysisSideBar.SoundnessAnalysis"),
-          JOptionPane.ERROR_MESSAGE);
+    } else {
+      showErrorInSidebar(Messages.getString("PetriNet.NotSound"));
+    }
   }
 }

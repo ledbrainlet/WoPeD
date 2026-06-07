@@ -14,19 +14,15 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.security.KeyStore;
 import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -42,18 +38,8 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
     private static final int SETTINGS_LABEL_RIGHT_PADDING = 10;
     private static final int API_KEY_VALIDATION_TIMEOUT_MILLIS = 5000;
 
-    // Enable automatic intermediate certificate fetching
-    static {
-        // Enable AIA (Authority Information Access) certificate fetching
-        // This allows Java to download missing intermediate certificates automatically
-        System.setProperty("com.sun.security.enableAIAcaIssuers", "true");
-        // Also enable CRL checking if needed
-        System.setProperty("com.sun.net.ssl.checkRevocation", "false");
-        
-        // Load custom truststore as fallback
-        loadCustomTruststore();
-    }
-    
+    // SSL truststore is initialized at application startup in RunWoPeD.main()
+
     private JCheckBox useBox = null;
     private JPanel enabledPanel = null;
     private JPanel settingsPanel = null;
@@ -1592,47 +1578,6 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
                 || (key != null && !key.trim().isEmpty());
         if (canFetch) {
             fetchAndFillModels(true);
-        }
-    }
-
-    /**
-     * Load custom truststore from resources to support GEANT CA and other certificates
-     * not in the default Java truststore. This ensures the JAR works on any system
-     * without requiring manual certificate imports.
-     */
-    private static void loadCustomTruststore() {
-        try {
-            // Try to load bundled truststore from resources
-            InputStream truststoreStream = ConfNLPToolsPanel.class
-                    .getResourceAsStream("/woped-truststore.jks");
-            
-            if (truststoreStream != null) {
-                // Load the custom truststore
-                KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
-                char[] password = "woped123".toCharArray(); // Consider externalizing this
-                trustStore.load(truststoreStream, password);
-                truststoreStream.close();
-
-                // Initialize TrustManager with custom truststore
-                TrustManagerFactory tmf = TrustManagerFactory.getInstance(
-                        TrustManagerFactory.getDefaultAlgorithm());
-                tmf.init(trustStore);
-
-                // Create SSL context with custom trust managers
-                SSLContext sslContext = SSLContext.getInstance("TLS");
-                sslContext.init(null, tmf.getTrustManagers(), null);
-                
-                // Set as default for all HTTPS connections
-                HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
-                
-                System.out.println("Custom truststore loaded successfully");
-            } else {
-                // Fallback: merge with system truststore
-                System.out.println("Custom truststore not found, using system default");
-            }
-        } catch (Exception e) {
-            System.err.println("Failed to load custom truststore: " + e.getMessage());
-            // Continue with default truststore - connection may fail but app won't crash
         }
     }
 
