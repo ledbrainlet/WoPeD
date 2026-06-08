@@ -13,6 +13,7 @@ import java.util.Scanner;
 import org.woped.core.config.ConfigurationManager;
 import org.woped.core.controller.IEditor;
 import org.woped.core.utilities.LoggerManager;
+import org.woped.core.utilities.SslTrustStoreInitializer;
 import org.woped.gui.translations.Messages;
 import org.woped.qualanalysis.paraphrasing.Constants;
 
@@ -52,12 +53,13 @@ public class WebServiceThreadLLM extends Thread {
         IEditor editor = paraphrasingPanel.getEditor();
         paraphrasingPanel.showLoadingAnimation(true);
 
-        // Build URL from configured T2P-LLM service settings (host/port/URI).
-        // WFC-US8 (#11): previously hard-coded http://localhost:8080/p2t/generateTextLLM,
-        // which ignored the LLM service fields the user sees in the configuration dialog.
-        String rawHost = ConfigurationManager.getConfiguration().getT2PLlmServiceHost();
-        int port       = ConfigurationManager.getConfiguration().getT2PLlmServicePort();
-        String rawUri  = ConfigurationManager.getConfiguration().getT2PLlmServiceUri();
+        // P2T LLM is served by the Process2Text server (upper section in NLP Tools),
+        // not by the Text2Process LLM endpoint (/t2p-2.0 on port 443).
+        SslTrustStoreInitializer.initialize();
+
+        String rawHost = ConfigurationManager.getConfiguration().getProcess2TextServerHost();
+        int port       = ConfigurationManager.getConfiguration().getProcess2TextServerPort();
+        String rawUri  = ConfigurationManager.getConfiguration().getProcess2TextServerURI();
 
         if (rawHost == null) rawHost = "";
         if (rawUri  == null) rawUri  = "";
@@ -175,8 +177,7 @@ public class WebServiceThreadLLM extends Thread {
         }
 
         message.append("\n\n").append(Messages.getString("P2T.Error.Webservice.Server", new Object[] {serverUrl}));
-        message.append("\n\n").append(Messages.getString("P2T.Error.Webservice.GeminiHint"));
-        message.append("\n").append(Messages.getString("P2T.Error.Webservice.P2THint"));
+        message.append("\n\n").append(Messages.getString("P2T.Error.Webservice.P2THint"));
         return message.toString();
     }
 

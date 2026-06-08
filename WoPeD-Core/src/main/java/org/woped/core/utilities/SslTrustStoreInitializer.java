@@ -22,7 +22,9 @@ public final class SslTrustStoreInitializer {
     private static final String BUNDLED_TRUSTSTORE_RESOURCE = "/woped-truststore.jks";
     private static final char[] BUNDLED_TRUSTSTORE_PASSWORD = "woped123".toCharArray();
     private static final String[] PEM_CERT_RESOURCES = {
-        "/ssl/geant_ov_rsa_ca_4.pem"
+        "/ssl/geant_tls_rsa_1.pem",
+        "/ssl/geant_ov_rsa_ca_4.pem",
+        "/ssl/harica_tls_rsa_root_ca_2021.pem"
     };
 
     private static boolean initialized;
@@ -41,6 +43,7 @@ public final class SslTrustStoreInitializer {
             KeyStore mergedTrustStore = loadDefaultTrustStore();
             mergeBundledTrustStore(mergedTrustStore);
             mergeBundledPemCertificates(mergedTrustStore);
+            mergeWindowsRootCertificates(mergedTrustStore);
             mergeUserCertificates(mergedTrustStore);
             applyTrustStore(mergedTrustStore);
             initialized = true;
@@ -105,6 +108,20 @@ public final class SslTrustStoreInitializer {
                                 certificateFactory),
                         "bundled-pem-");
             }
+        }
+    }
+
+    private static void mergeWindowsRootCertificates(KeyStore mergedTrustStore) {
+        if (!System.getProperty("os.name", "").toLowerCase().contains("windows")) {
+            return;
+        }
+
+        try {
+            KeyStore windowsRoot = KeyStore.getInstance("Windows-ROOT", "SunMSCAPI");
+            windowsRoot.load(null, null);
+            mergeKeyStores(mergedTrustStore, windowsRoot, "windows-root-");
+        } catch (Exception e) {
+            System.err.println("Failed to merge Windows root certificates: " + e.getMessage());
         }
     }
 
