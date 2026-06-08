@@ -17,6 +17,7 @@ import javax.swing.*;
 
 import org.json.simple.parser.ParseException;
 import org.woped.core.config.ConfigurationManager;
+import org.woped.core.utilities.LlmModelFilter;
 import org.woped.core.controller.AbstractApplicationMediator;
 import org.woped.core.controller.AbstractViewEvent;
 import org.woped.core.controller.ViewEvent;
@@ -292,6 +293,9 @@ public class P2TUI extends JDialog {
                     if (!PROVIDER_LMSTUDIO.equals(selectedProvider) && !validateAPIKey()) {
                         return;
                     }
+                    if (!validateSelectedModel()) {
+                        return;
+                    }
 
                     saveConfiguration();
                     executeAction();
@@ -348,16 +352,7 @@ public class P2TUI extends JDialog {
                                 }
 
                                 SwingUtilities.invokeLater(
-                                        () -> {
-                                            modelComboBox.removeAllItems();
-                                            for (String model : models) {
-                                                modelComboBox.addItem(model);
-                                            }
-                                            String savedModel = ConfigurationManager.getConfiguration().getGptModel();
-                                            if (savedModel != null) {
-                                                modelComboBox.setSelectedItem(savedModel);
-                                            }
-                                        });
+                                        () -> populateModelComboBox(models, selectedProvider));
                             } catch (IOException | ParseException e) {
                                 SwingUtilities.invokeLater(
                                         () ->
@@ -370,6 +365,41 @@ public class P2TUI extends JDialog {
                             }
                         })
                 .start();
+    }
+
+    private void populateModelComboBox(List<String> models, String provider) {
+        modelComboBox.removeAllItems();
+        for (String model : models) {
+            modelComboBox.addItem(model);
+        }
+        String savedModel = ConfigurationManager.getConfiguration().getGptModel();
+        String selected = LlmModelFilter.resolveSelection(models, savedModel, provider);
+        modelComboBox.setSelectedItem(selected);
+    }
+
+    private boolean validateSelectedModel() {
+        String selectedProvider = (String) providerComboBox.getSelectedItem();
+        if (PROVIDER_LMSTUDIO.equals(selectedProvider)) {
+            return true;
+        }
+        Object selectedModel = modelComboBox.getSelectedItem();
+        if (selectedModel == null || selectedModel.toString().isBlank()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    Messages.getString("P2T.model.invalid.message"),
+                    Messages.getString("P2T.model.invalid.title"),
+                    JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        if (!LlmModelFilter.isSupported(selectedModel.toString(), selectedProvider)) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    Messages.getString("P2T.model.invalid.message"),
+                    Messages.getString("P2T.model.invalid.title"),
+                    JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        return true;
     }
 
     boolean validateAPIKey() {

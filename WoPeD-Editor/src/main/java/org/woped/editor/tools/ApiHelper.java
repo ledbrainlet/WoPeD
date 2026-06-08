@@ -15,6 +15,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.woped.core.utilities.LlmModelFilter;
 import org.woped.core.utilities.LoggerManager;
 import org.woped.editor.Constants;
 
@@ -25,16 +26,11 @@ public class ApiHelper {
 
     /**
      * Fetches the list of available model IDs directly from the selected LLM
-     * provider's API.
-     *
-     * WFC-US5 (#6): previously this called a WoPeD-side endpoint
-     * (http://localhost:8080/p2t/gptModels...) which (a) ignored the user's
-     * actual provider/key, (b) tied the FatClient to an internal DHBW service,
-     * and (c) failed with "Connection refused" outside the dev environment.
+     * provider's API and filters them to text/chat-capable models (P2T/T2P).
      *
      * @param apiKey   user's API key (ignored for lmStudio)
      * @param provider one of "openAi", "gemini", "lmStudio"
-     * @return alphabetically sorted list of model IDs reported by the provider
+     * @return alphabetically sorted list of compatible model IDs
      */
     public static List<String> fetchModels(String apiKey, String provider) throws IOException, ParseException {
         LoggerManager.info(Constants.EDITOR_LOGGER, "Fetching models for provider: " + provider);
@@ -55,12 +51,12 @@ public class ApiHelper {
                 urlString = "https://generativelanguage.googleapis.com/v1beta/models?key="
                         + URLEncoder.encode(apiKey, StandardCharsets.UTF_8);
                 useBearerAuth = false;
-                parseAsOpenAi = false; // gemini returns {"models":[{"name":"models/..."}, ...]}
+                parseAsOpenAi = false;
                 break;
             case "lmStudio":
                 urlString = "http://localhost:1234/v1/models";
                 useBearerAuth = false;
-                parseAsOpenAi = true; // LM Studio is OpenAI-compatible
+                parseAsOpenAi = true;
                 break;
             default:
                 throw new IOException("Unknown provider: " + provider);
@@ -123,15 +119,17 @@ public class ApiHelper {
             Object id = ((JSONObject) item).get(idField);
             if (id == null) continue;
             String idStr = id.toString();
-            // Gemini returns names like "models/gemini-pro" — strip prefix for readability.
             if (!parseAsOpenAi && idStr.startsWith("models/")) {
                 idStr = idStr.substring("models/".length());
             }
             models.add(idStr);
         }
-        Collections.sort(models);
+
+        int beforeFilter = models.size();
+        List<String> filtered = LlmModelFilter.filterForTextGeneration(models, provider);
         LoggerManager.info(Constants.EDITOR_LOGGER,
-                "Fetched " + models.size() + " models from " + provider);
-        return models;
+                "Fetched " + beforeFilter + " models from " + provider
+                        + ", " + filtered.size() + " compatible with P2T/T2P");
+        return filtered;
     }
 }
