@@ -62,6 +62,7 @@ import org.woped.editor.controller.bpel.Invoke;
 import org.woped.editor.controller.bpel.Receive;
 import org.woped.editor.controller.bpel.Reply;
 import org.woped.editor.controller.bpel.Wait;
+import org.woped.editor.controller.vc.EditorPanel;
 import org.woped.editor.controller.vc.EditorVC;
 import org.woped.gui.translations.Messages;
 import org.woped.pnml.AnnotationGraphisType;
@@ -437,7 +438,9 @@ public class PNMLImport {
                     layout.setTreePanelVisible(true);
                   }
 
-                  ((EditorVC) editor[i]).getEditorPanel().setSavedLayoutInfo(layout);
+                  EditorPanel editorPanel = ((EditorVC) editor[i]).getEditorPanel();
+                  editorPanel.setSavedLayoutInfo(layout);
+                  editorPanel.openDefaultSidebar();
                 }
               }
               if (currentNet.getToolspecificArray(j).isSetResources()) {

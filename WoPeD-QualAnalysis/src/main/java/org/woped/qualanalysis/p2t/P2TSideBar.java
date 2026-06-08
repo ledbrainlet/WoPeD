@@ -54,6 +54,8 @@ public class P2TSideBar extends JPanel implements ActionListener {
 
     addComponents();
     showLoadingAnimation(false);
+    updateProviderLabel();
+    enableButtons(true);
   }
 
   /**
@@ -476,20 +478,31 @@ public class P2TSideBar extends JPanel implements ActionListener {
    * @param visible
    */
   public void onSideBarShown(boolean visible) {
+    onSideBarShown(visible, true);
+  }
+
+  /**
+   * @param visible whether the P2T panel is shown
+   * @param autoGenerate when true, starts LLM generation on first display (explicit P2T menu action)
+   */
+  public void onSideBarShown(boolean visible, boolean autoGenerate) {
     if (visible) {
       updateProviderLabel();
+      enableButtons(true);
     }
-    // checkt, ob der Prozess sound ist, bevor er an den Webservice übergeben wird. Alle anderen
-    // Prozesse werden nicht übersetzt.
+
     IQualanalysisService analyseService =
         QualAnalysisServiceFactory.createNewQualAnalysisService(editor);
-    if (analyseService.isSound()) {
-      if (visible == true && this.firstTimeDisplayed == false) {
-        getText();
-        this.firstTimeDisplayed = true;
+    if (!analyseService.isSound()) {
+      if (visible) {
+        showErrorInSidebar(Messages.getString("PetriNet.NotSound"));
       }
-    } else {
-      showErrorInSidebar(Messages.getString("PetriNet.NotSound"));
+      return;
+    }
+
+    if (visible && autoGenerate && !firstTimeDisplayed) {
+      getText();
+      firstTimeDisplayed = true;
     }
   }
 }

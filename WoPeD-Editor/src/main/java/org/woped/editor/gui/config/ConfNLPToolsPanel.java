@@ -29,6 +29,7 @@ import javax.swing.event.DocumentListener;
 
 import org.json.simple.parser.ParseException;
 import org.woped.core.config.ConfigurationManager;
+import org.woped.core.utilities.SslTrustStoreInitializer;
 import org.woped.editor.tools.ApiHelper;
 import org.woped.gui.lookAndFeel.WopedButton;
 import org.woped.gui.translations.Messages;
@@ -1304,6 +1305,8 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
     }
 
     private void testLLMConnection() {
+        SslTrustStoreInitializer.initialize();
+
         String rawHost = getServiceUrlText_LLM().getText().trim();
         String rawPort = getServicePortText_LLM().getText().trim();
         String rawPath = getServiceUriText_LLM().getText().trim();
@@ -1354,18 +1357,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             throw new IOException("Server returned unexpected response: " + responseCode);
 
         } catch (javax.net.ssl.SSLHandshakeException ex) {
-            String errorMsg = Messages.getString("Paraphrasing.Webservice.Error.WebserviceException.Message", arg)
-                    + "\n\nSSL Certificate Error: " + ex.getMessage()
-                    + "\n\nPossible causes:"
-                    + "\n- Certificate not trusted (self-signed or missing CA)"
-                    + "\n- Certificate expired or not yet valid"
-                    + "\n- Hostname mismatch"
-                    + "\n- Java version: " + System.getProperty("java.version");
-            JOptionPane.showMessageDialog(
-                    this.getSettingsPanel_T2P(),
-                    errorMsg,
-                    Messages.getString("Paraphrasing.Webservice.Error.Title"),
-                    JOptionPane.ERROR_MESSAGE);
+            showSslConnectionError(this.getSettingsPanel_T2P(), arg, ex);
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(
                     this.getSettingsPanel_T2P(),
@@ -1383,6 +1375,8 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
     }
 
     private void testProcess2TextConnection() {
+        SslTrustStoreInitializer.initialize();
+
         URL url = null;
         String port = getServerPortText().getText().isEmpty() ? "" : ":" + getServerPortText().getText();
         String protocol = getServerPortText().getText().isEmpty() || !port.equals(":443") ? "http://" : "https://";
@@ -1394,6 +1388,8 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         try {
             url = new URL(connection);
             URLConnection urlConnection = url.openConnection();
+            urlConnection.setConnectTimeout(10000);
+            urlConnection.setReadTimeout(10000);
 
             if (urlConnection.getContent() != null) {
                 arg[1] = "P2T";
@@ -1401,14 +1397,19 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
                         Messages.getString("Paraphrasing.Webservice.Success.Message", arg),
                         Messages.getString("Paraphrasing.Webservice.Success.Title"), JOptionPane.INFORMATION_MESSAGE);
             }
+        } catch (javax.net.ssl.SSLHandshakeException ex) {
+            showSslConnectionError(this.getSettingsPanel(), arg, ex);
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(this.getSettingsPanel(),
-                    Messages.getString("Paraphrasing.Webservice.Error.WebserviceException.Message", arg),
+                    Messages.getString("Paraphrasing.Webservice.Error.WebserviceException.Message", arg)
+                            + "\n\n" + ex.getMessage(),
                     Messages.getString("Paraphrasing.Webservice.Error.Title"), JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void testText2ProcessConnection() {
+        SslTrustStoreInitializer.initialize();
+
         URL url;
         String port = getServerPortText_T2P().getText().isEmpty() ? "" : ":" + getServerPortText_T2P().getText();
         String protocol = getServerPortText_T2P().getText().isEmpty() || !port.equals(":443") ? "http://" : "https://";
@@ -1420,17 +1421,45 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         try {
             url = new URL(connection);
             URLConnection urlConnection = url.openConnection();
+            urlConnection.setConnectTimeout(10000);
+            urlConnection.setReadTimeout(10000);
             if (urlConnection.getContent() != null) {
                 arg[1] = "T2P";
                 JOptionPane.showMessageDialog(this.getSettingsPanel_T2P(),
                         Messages.getString("Paraphrasing.Webservice.Success.Message", arg),
                         Messages.getString("Paraphrasing.Webservice.Success.Title"), JOptionPane.INFORMATION_MESSAGE);
             }
+        } catch (javax.net.ssl.SSLHandshakeException ex) {
+            showSslConnectionError(this.getSettingsPanel_T2P(), arg, ex);
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(this.getSettingsPanel_T2P(),
-                    Messages.getString("Paraphrasing.Webservice.Error.WebserviceException.Message", arg),
+                    Messages.getString("Paraphrasing.Webservice.Error.WebserviceException.Message", arg)
+                            + "\n\n" + ex.getMessage(),
                     Messages.getString("Paraphrasing.Webservice.Error.Title"), JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private void showSslConnectionError(Component parent, String[] arg, javax.net.ssl.SSLHandshakeException ex) {
+        String errorMsg = Messages.getString("Paraphrasing.Webservice.Error.WebserviceException.Message", arg)
+                + "\n\nSSL Certificate Error: " + ex.getMessage()
+                + "\n\nPossible causes:"
+                + "\n- Certificate not trusted (self-signed or missing CA)"
+                + "\n- Antivirus HTTPS scanning (e.g. Norton) intercepts TLS"
+                + "\n- Certificate expired or not yet valid"
+                + "\n- Hostname mismatch"
+                + "\n- Java version: " + System.getProperty("java.version")
+                + " (Java 11+ is required; 17 is fine)"
+                + "\n\nWorkarounds:"
+                + "\n- Restart WoPeD via RunWoPeD and check console for"
+                + " \"SSL truststore initialized\""
+                + "\n- Place trusted CA files (.pem/.crt/.cer) in"
+                + " " + System.getProperty("user.home") + "\\.WoPeD\\ssl"
+                + "\n- Or disable HTTPS scanning in your antivirus";
+        JOptionPane.showMessageDialog(
+                parent,
+                errorMsg,
+                Messages.getString("Paraphrasing.Webservice.Error.Title"),
+                JOptionPane.ERROR_MESSAGE);
     }
 
     private void setDefaultValues() {

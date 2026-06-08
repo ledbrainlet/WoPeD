@@ -33,10 +33,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.*;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.ExecutionException;
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -54,6 +52,7 @@ import com.google.gson.JsonSyntaxException;
 import org.woped.core.config.ConfigurationManager;
 import org.woped.core.controller.AbstractApplicationMediator;
 import org.woped.core.controller.IEditor;
+import org.woped.core.utilities.SslTrustStoreInitializer;
 import org.woped.editor.controller.vc.EditorVC;
 import org.woped.file.PNMLImport;
 import org.woped.gui.lookAndFeel.WopedButton;
@@ -76,14 +75,9 @@ public class T2PUI extends JDialog {
 
     private boolean requested = false;
     private SwingWorker<HttpURLConnection, Void> bgTask;
-    private SwingWorker<HttpResponse, Void> bgTaskHttp;
 
     private String inputText;
-    private JComboBox<String> approachBox;
     private JComboBox<String> llmProviderBox;
-
-    static final String CLASSIC_APPROACH = "Classic NLP";
-    static final String LLM_APPROACH = "LLM-based";
 
     // LLM Provider constants
     static final String OPENAI_PROVIDER = "OpenAI";
@@ -199,22 +193,10 @@ public class T2PUI extends JDialog {
         JComboBox<String> langBox = new JComboBox<String>(lang);
         langBox.setSelectedIndex(1);
 
-        // Approach selection dropdown (Classic or LLM)
-        String[] approaches = { CLASSIC_APPROACH, LLM_APPROACH };
-        approachBox = new JComboBox<String>(approaches);
-        approachBox.setSelectedIndex(0);
-
-        // LLM Provider selection dropdown
+        // LLM Provider selection dropdown (T2P is LLM-only; Classic NLP removed)
         String[] llmProviders = { OPENAI_PROVIDER, GEMINI_PROVIDER };
         llmProviderBox = new JComboBox<String>(llmProviders);
-        llmProviderBox.setSelectedIndex(0);
-        llmProviderBox.setEnabled(false); // Initially disabled
-
-        // Add listener to enable/disable LLM provider selection based on approach
-        approachBox.addActionListener(e -> {
-            String selectedApproach = (String) approachBox.getSelectedItem();
-            llmProviderBox.setEnabled(LLM_APPROACH.equals(selectedApproach));
-        });
+        selectConfiguredLlmProvider();
 
         // Generate button: triggers the request() method
         WopedButton btnGenerate = new WopedButton(
@@ -259,10 +241,6 @@ public class T2PUI extends JDialog {
         buttonPanel.add(btnErase);
         buttonPanel.add(langBox);
         buttonPanel.add(Box.createHorizontalGlue()); // Pushes following components to the right
-        buttonPanel.add(new JLabel("Approach:"));
-        buttonPanel.add(Box.createRigidArea(new Dimension(5, 0)));
-        buttonPanel.add(approachBox);
-        buttonPanel.add(Box.createRigidArea(new Dimension(10, 0)));
         buttonPanel.add(new JLabel("LLM Provider:"));
         buttonPanel.add(Box.createRigidArea(new Dimension(5, 0)));
         buttonPanel.add(llmProviderBox);
@@ -289,6 +267,15 @@ public class T2PUI extends JDialog {
         }
     }
 
+    private void selectConfiguredLlmProvider() {
+        String configuredProvider = ConfigurationManager.getConfiguration().getLlmProvider();
+        if (configuredProvider != null && configuredProvider.equalsIgnoreCase("gemini")) {
+            llmProviderBox.setSelectedItem(GEMINI_PROVIDER);
+        } else {
+            llmProviderBox.setSelectedItem(OPENAI_PROVIDER);
+        }
+    }
+
     /**
      * Handles the main request logic when the generate button is pressed.
      * Validates input, prompts for API key if needed, and starts background
@@ -302,29 +289,20 @@ public class T2PUI extends JDialog {
         inputText = textArea.getText();
 
         if (!inputText.isEmpty()) {
-            String selectedApproach = (String) approachBox.getSelectedItem();
+            String apiKey = ConfigurationManager.getConfiguration().getGptApiKey();
+            String selectedProvider = (String) llmProviderBox.getSelectedItem();
 
-            if (selectedApproach.equals(LLM_APPROACH)) {
-                String apiKey = ConfigurationManager.getConfiguration().getGptApiKey();
-                String selectedProvider = (String) llmProviderBox.getSelectedItem();
-
-                // Prompt and validate API key
-                while (apiKey.equals("test") || apiKey.isEmpty() || !isApiKeyValid(apiKey, selectedProvider)) {
-                    apiKey = promptForApiKey(selectedProvider);
-                    if (apiKey == null || apiKey.isEmpty()) {
-                        requested = false;
-                        return;
-                    }
-                    ConfigurationManager.getConfiguration().setGptApiKey(apiKey);
+            while (apiKey == null || apiKey.equals("test") || apiKey.isEmpty()
+                    || !isApiKeyValid(apiKey, selectedProvider)) {
+                apiKey = promptForApiKey(selectedProvider);
+                if (apiKey == null || apiKey.isEmpty()) {
+                    requested = false;
+                    return;
                 }
-
-                // Start LLM background worker with validated API key and selected provider
-                llmBackgroundWorker(inputText, apiKey, selectedProvider);
-            } else {
-                // Start classic background worker
-                jsonBackgroundWorker(inputText);
+                ConfigurationManager.getConfiguration().setGptApiKey(apiKey);
             }
 
+            llmBackgroundWorker(inputText, apiKey, selectedProvider);
             showLoadingBox();
         } else {
             showErrorPopUp("T2PUI.NoText.Title", "T2PUI.NoText.Text");
@@ -466,6 +444,8 @@ public class T2PUI extends JDialog {
      * @param provider The LLM provider to use
      */
     void llmBackgroundWorker(String text, String apiKey, String provider) {
+        SslTrustStoreInitializer.initialize();
+
         int portNum = ConfigurationManager.getConfiguration().getT2PLlmServicePort();
         String host = ConfigurationManager.getConfiguration().getT2PLlmServiceHost().trim();
         
@@ -581,133 +561,6 @@ public class T2PUI extends JDialog {
                     if (connection != null) {
                         connection.disconnect();
                     }
-                }
-            }
-        };
-
-        bgTask.execute();
-    }
-
-    /**
-     * This method is tailored to connect WoPeD-TextAnalyzer to a SpringBootServer
-     * providing the T2P
-     * pnml string as json object.
-     *
-     * @author <a href="mailto:kanzler.benjamin@student.dhbe-karlsruhe.de">Benjamin
-     *         Kanzler</a>
-     * @param text
-     */
-    void jsonBackgroundWorker(String text) {
-
-        String connectionStr = "http://"
-                + ConfigurationManager.getConfiguration().getText2ProcessServerHost()
-                + ":"
-                + ConfigurationManager.getConfiguration().getText2ProcessServerPort()
-                + ConfigurationManager.getConfiguration().getText2ProcessServerURI()
-                + "/generatePNML";
-
-        bgTask = new SwingWorker<HttpURLConnection, Void>() {
-            @Override
-            protected HttpURLConnection doInBackground() throws IOException {
-                // Forming the Url out of the configuration
-                HttpURLConnection connection;
-                connection = (HttpURLConnection) new URL(connectionStr).openConnection();
-
-                // Setting the connection properties
-                connection.setRequestMethod("POST");
-                connection.setRequestProperty("Content-Type", "application/json; UTF-8");
-                connection.setRequestProperty("Accept", "application/json");
-                connection.setDoOutput(true);
-
-                // Establishing an output stream and write the text as json
-                OutputStream outputStream = connection.getOutputStream();
-                byte[] input = text.getBytes("utf-8");
-                outputStream.write(input, 0, input.length);
-
-                return connection;
-            }
-
-            @Override
-            protected void done() {
-                try {
-                    if (loadDialog != null)
-                        loadDialog.dispose();
-                    HttpURLConnection connection = get();
-                    switch (connection.getResponseCode()) {
-                        case 200:
-                        case 201:
-                        case 202:
-                        case 204:
-                            // Reading the response
-                            BufferedReader bufferedReader = new BufferedReader(
-                                    new InputStreamReader(connection.getInputStream()));
-                            StringBuilder responseJson = new StringBuilder();
-                            String responseLine;
-                            // Reading the incoming json line by line and transforming it to a single String
-                            while ((responseLine = bufferedReader.readLine()) != null) {
-                                responseJson.append(responseLine.trim());
-                            }
-                            String pnml = T2PResponseParser.extractPnml(responseJson.toString());
-                            // Extract the pnml-xml from the JSON body
-                            if (pnml != null && !pnml.isEmpty()) {
-                                displayPNML(pnml);
-                            } else {
-                                showErrorPopUp("T2PUI.LLMError.Title", "T2PUI.InvalidResponse.Text");
-                            }
-                            break;
-                        case 400:
-                            showErrorPopUp("T2PUI.400Error.Title", "T2PUI.400Error.Text");
-                            break;
-                        case 500:
-                            showErrorPopUp("T2PUI.500Error.Title", "T2PUI.GeneralError.Text");
-                            break;
-                        case 503:
-                            showErrorPopUp("T2PUI.503Error.Title", "T2PUI.503Error.Text");
-                            break;
-                        default:
-                            showErrorPopUp("T2PUI.GeneralError.Title", "T2PUI.GeneralError.Text");
-                            break;
-                    }
-                } catch (MalformedURLException e) {
-                    String[] arg = { connectionStr };
-                    JOptionPane.showMessageDialog(
-                            null,
-                            Messages.getString("T2PUI.500Error.Text", arg)
-                                    + Messages.getString("T2PUI.Webservice.Settings"),
-                            Messages.getString("T2PUI.500Error.Title"),
-                            JOptionPane.ERROR_MESSAGE);
-                    return;
-                } catch (JsonSyntaxException e) {
-                    showErrorPopUp("T2PUI.LLMError.Title", "T2PUI.InvalidResponse.Text");
-                    return;
-                } catch (IOException e) {
-                    String[] arg = { connectionStr };
-                    JOptionPane.showMessageDialog(
-                            null,
-                            Messages.getString("T2PUI.500Error.Text", arg)
-                                    + Messages.getString("T2PUI.Webservice.Settings"),
-                            Messages.getString("T2PUI.500Error.Title"),
-                            JOptionPane.ERROR_MESSAGE);
-                    return;
-                } catch (InterruptedException e) {
-                    String[] arg = { connectionStr };
-                    JOptionPane.showMessageDialog(
-                            null,
-                            Messages.getString("T2PUI.500Error.Text", arg)
-                                    + Messages.getString("T2PUI.Webservice.Settings"),
-                            Messages.getString("T2PUI.500Error.Title"),
-                            JOptionPane.ERROR_MESSAGE);
-                    return;
-                } catch (ExecutionException e) {
-                    String[] arg = { connectionStr };
-                    JOptionPane.showMessageDialog(
-                            null,
-                            Messages.getString("T2PUI.500Error.Text", arg)
-                                    + "\n"
-                                    + Messages.getString("T2PUI.Webservice.Settings"),
-                            Messages.getString("T2PUI.500Error.Title"),
-                            JOptionPane.ERROR_MESSAGE);
-                    return;
                 }
             }
         };
