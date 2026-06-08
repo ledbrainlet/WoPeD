@@ -120,8 +120,6 @@
 		<t2pLLMServiceURI>/t2p-2.0</t2pLLMServiceURI>
   	</t2p>
 <Gpt>
-	<GptApiKey>test</GptApiKey>
-	<GptPrompt>test</GptPrompt>
 	<GptUseNew>true</GptUseNew>
 </Gpt>
 

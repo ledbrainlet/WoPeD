@@ -376,7 +376,9 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             c.gridx = 1;
             c.gridy = 3;
             c.gridwidth = 3;
+            c.fill = GridBagConstraints.HORIZONTAL;
             settingsPanel.add(getPromptTextScrollPane(), c);
+            c.fill = GridBagConstraints.NONE;
 
         }
 
@@ -1384,6 +1386,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         getServiceUrlText_LLM().setText(ConfigurationManager.getStandardConfiguration().getT2PLlmServiceHost());
         getServicePortText_LLM().setText("" + ConfigurationManager.getStandardConfiguration().getT2PLlmServicePort());
         getServiceUriText_LLM().setText("" + ConfigurationManager.getStandardConfiguration().getT2PLlmServiceUri());
+        getPromptTextT2P().setText(ConfigurationManager.getStandardConfiguration().getGptPromptT2P());
     }
 
     private void testProcess2TextConnection() {
@@ -1478,6 +1481,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         getServerURLText().setText(ConfigurationManager.getStandardConfiguration().getProcess2TextServerHost());
         getManagerPathText().setText(ConfigurationManager.getStandardConfiguration().getProcess2TextServerURI());
         getServerPortText().setText("" + ConfigurationManager.getStandardConfiguration().getProcess2TextServerPort());
+        getPromptText().setText(ConfigurationManager.getStandardConfiguration().getGptPrompt());
     }
 
     private void setDefaultValues_T2P() {
@@ -1485,6 +1489,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         getManagerPathText_T2P().setText(ConfigurationManager.getStandardConfiguration().getText2ProcessServerURI());
         getServerPortText_T2P()
                 .setText("" + ConfigurationManager.getStandardConfiguration().getText2ProcessServerPort());
+        getPromptTextT2P().setText(ConfigurationManager.getStandardConfiguration().getGptPromptT2P());
     }
 
     class CheckboxListener implements ItemListener {
