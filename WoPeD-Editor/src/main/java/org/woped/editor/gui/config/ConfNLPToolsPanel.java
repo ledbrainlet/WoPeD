@@ -397,7 +397,12 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
 
             int row = 0;
 
-            // --- NLP-Subsektion (WFC-US26): merged into a single T2P block ---
+            // --- NLP-Subsektion (WFC-US26): auf Wunsch ausgeblendet ---
+            // Im T2P-Block werden nur noch die LLM-Servereinstellungen benoetigt.
+            // Der NLP-UI-Code bleibt erhalten (nur auskommentiert) und kann bei
+            // Bedarf wieder eingeblendet werden. Getter, applyConfiguration() und
+            // restoreValues() bleiben unveraendert aktiv (Persistenz unberuehrt).
+            /*
             c.weightx = 0; c.gridx = 0; c.gridy = row; c.gridwidth = 4;
             settingsPanel_T2P.add(new JLabel("<html><b>"
                     + Messages.getString("Configuration.T2P.Settings.Panel.Title_NLP") + "</b></html>"), c);
@@ -424,12 +429,18 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             c.weightx = 1; c.gridx = 1; c.gridy = row; c.gridwidth = 2; c.fill = GridBagConstraints.HORIZONTAL;
             settingsPanel_T2P.add(getManagerPathText_T2P(), c);
             c.fill = GridBagConstraints.NONE; c.gridwidth = 1; row++;
+            */
 
             // --- LLM-Subsektion (WFC-US26) ---
+            // Fette Unter-Ueberschrift "LLM" ausgeblendet: nachdem die NLP-Subsektion
+            // entfernt wurde, ist der einzige verbleibende Block ohnehin LLM -> redundant.
+            // Code bleibt erhalten (nur auskommentiert).
+            /*
             c.weightx = 0; c.gridx = 0; c.gridy = row; c.gridwidth = 4; c.insets = new Insets(12, 0, 2, 0);
             settingsPanel_T2P.add(new JLabel("<html><b>"
                     + Messages.getString("Configuration.T2P.Settings.Panel.Title_LLM") + "</b></html>"), c);
             c.insets = new Insets(2, 0, 2, 0); c.gridwidth = 1; row++;
+            */
 
             c.weightx = 0; c.gridx = 0; c.gridy = row;
             settingsPanel_T2P.add(alignSettingsLabel(getServiceUrlLabel_LLM()), c);
