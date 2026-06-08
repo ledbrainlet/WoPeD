@@ -991,8 +991,9 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         if (showAgainBox == null) {
             showAgainBox = new JCheckBox(Messages.getString("Configuration.GPT.show.again.Title"));
             showAgainBox.setEnabled(true);
-            // WFC-US9 (#12): the tooltip key Configuration.GPT.tool.tip.text.Title
-            // describes the prompt text area, so it now lives on getPromptText().
+            // WFC-US28: explain that this checkbox toggles the P2T settings popup.
+            showAgainBox.setToolTipText(
+                    "<html>" + Messages.getString("Configuration.GPT.show.again.tooltip") + "</html>");
         }
         return showAgainBox;
     }
