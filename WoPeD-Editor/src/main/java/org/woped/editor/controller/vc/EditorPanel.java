@@ -196,7 +196,7 @@ public class EditorPanel extends JPanel {
     m_mainSplitPane.setResizeWeight(0.85);
 
     if (ConfigurationManager.getConfiguration().getProcess2TextUse() && !p2TBarVisible) {
-      showP2TBar(false);
+      showP2TBar(true);
     }
 
     revalidate();
