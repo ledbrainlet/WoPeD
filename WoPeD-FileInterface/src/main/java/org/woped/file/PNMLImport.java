@@ -415,7 +415,7 @@ public class PNMLImport {
                     layout.setOverviewPanelVisible(
                         currentNet.getToolspecificArray(j).getOverviewPanelVisible());
                   } else {
-                    layout.setOverviewPanelVisible(true);
+                    layout.setOverviewPanelVisible(false);
                   }
 
                   if (currentNet.getToolspecificArray(j).isSetTreeHeightOverview()) {
@@ -435,12 +435,11 @@ public class PNMLImport {
                         currentNet.getToolspecificArray(j).getTreePanelVisible());
 
                   } else {
-                    layout.setTreePanelVisible(true);
+                    layout.setTreePanelVisible(false);
                   }
 
                   EditorPanel editorPanel = ((EditorVC) editor[i]).getEditorPanel();
                   editorPanel.setSavedLayoutInfo(layout);
-                  editorPanel.openDefaultSidebar();
                 }
               }
               if (currentNet.getToolspecificArray(j).isSetResources()) {
@@ -589,6 +588,10 @@ public class PNMLImport {
           editor[i].setName(editorName);
           editor[i].setSaved(false);
         } else editor[i].setSaved(savedFlag);
+
+        if (editor[i] instanceof EditorVC) {
+          ((EditorVC) editor[i]).getEditorPanel().openDefaultSidebar();
+        }
       }
     }
   }
@@ -1005,7 +1008,7 @@ public class PNMLImport {
                             layout.setOverviewPanelVisible(
                                 subProcessNet.getToolspecificArray(j).getOverviewPanelVisible());
                           } else {
-                            layout.setOverviewPanelVisible(true);
+                            layout.setOverviewPanelVisible(false);
                           }
 
                           if (subProcessNet.getToolspecificArray(j).isSetTreeHeightOverview()) {
@@ -1017,7 +1020,7 @@ public class PNMLImport {
                             layout.setTreePanelVisible(
                                 subProcessNet.getToolspecificArray(j).getTreePanelVisible());
                           } else {
-                            layout.setTreePanelVisible(true);
+                            layout.setTreePanelVisible(false);
                           }
 
                           container.setEditorLayoutInfo(layout);

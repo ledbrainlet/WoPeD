@@ -162,21 +162,21 @@ public class EditorPanel extends JPanel {
       m_rightSideTreeView.setMinimumSize(d);
       m_mainSplitPane.setResizeWeight(0.85);
 
-      // NetColorScheme
-      m_understandColoring = new NetColorScheme();
+      // WFC-US28: overview and tree view hidden by default; PNML may restore saved visibility.
+      setOverviewPanelVisible(false);
+      setTreeviewPanelVisible(false);
     }
+
+    // NetColorScheme
+    m_understandColoring = new NetColorScheme();
 
     initializeAnalysisSideBar();
     initializeP2TSideBar();
-
-    if (loadUI && !(editor instanceof SubprocessEditorVC)) {
-      SwingUtilities.invokeLater(this::openDefaultSidebar);
-    }
   }
 
   /**
-   * Opens the right sidebar by default (overview, tree view, and P2T panel when enabled).
-   * Called after editor creation or PNML import so controls are visible without extra clicks.
+   * Applies default editor layout after creation or PNML import: frame size and P2T panel when
+   * enabled. Overview and tree view are always hidden on open (WFC-US28).
    */
   public void openDefaultSidebar() {
     if (m_mainSplitPane == null) {
@@ -185,19 +185,31 @@ public class EditorPanel extends JPanel {
 
     applyDefaultFrameSize();
 
-    setOverviewPanelVisible(true);
-    setTreeviewPanelVisible(true);
-
-    int dividerLocation = resolveSidebarDividerLocation();
-    m_mainSplitPane.setDividerLocation(dividerLocation);
-    m_mainSplitPane.setLastDividerLocation(dividerLocation);
-    m_mainSplitPane.setOneTouchExpandable(true);
-    m_mainSplitPane.setEnabled(true);
-    m_mainSplitPane.setResizeWeight(0.85);
-
-    if (ConfigurationManager.getConfiguration().getProcess2TextUse() && !p2TBarVisible) {
-      showP2TBar(true);
+    if (ConfigurationManager.getConfiguration().getProcess2TextUse()) {
+      if (p2tSideBar != null) {
+        p2tSideBar.prepareForNetOpen();
+      }
+      if (!p2TBarVisible) {
+        showP2TBar(true);
+      } else {
+        p2tSideBar.onSideBarShown(true, true);
+        int dividerLocation = resolveSidebarDividerLocation();
+        if (mainsplitPaneWithP2TBar != null) {
+          mainsplitPaneWithP2TBar.setDividerLocation(dividerLocation);
+        }
+      }
+    } else if (isOverviewPanelVisible() || isTreeviewPanelVisible()) {
+      int dividerLocation = resolveSidebarDividerLocation();
+      m_mainSplitPane.setDividerLocation(dividerLocation);
+      m_mainSplitPane.setLastDividerLocation(dividerLocation);
+      m_mainSplitPane.setOneTouchExpandable(true);
+      m_mainSplitPane.setEnabled(true);
+      m_mainSplitPane.setResizeWeight(0.85);
     }
+
+    // WFC-US28: showP2TBar can re-expose the overview/tree container; force hidden again.
+    setOverviewPanelVisible(false);
+    setTreeviewPanelVisible(false);
 
     revalidate();
     checkMainSplitPaneDivider();
@@ -655,10 +667,11 @@ public class EditorPanel extends JPanel {
       }
 
       if (overviewPanel != null) {
-        setOverviewPanelVisible(layoutInfo.getOverviewPanelVisible());
+        // WFC-US28: ignore saved overview visibility from PNML; always hidden on open.
+        setOverviewPanelVisible(false);
       }
       if (treeviewPanel != null) {
-        setTreeviewPanelVisible(layoutInfo.getTreePanelVisible());
+        setTreeviewPanelVisible(false);
       }
       // Size
       Dimension d = layoutInfo.getSavedSize();
