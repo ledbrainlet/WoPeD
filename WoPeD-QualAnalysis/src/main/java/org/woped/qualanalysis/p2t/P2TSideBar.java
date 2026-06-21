@@ -472,6 +472,14 @@ public class P2TSideBar extends JPanel implements ActionListener {
   }
 
   /**
+   * Resets auto-generation state so the next {@link #onSideBarShown(boolean, boolean)} with
+   * {@code autoGenerate=true} runs P2T once for the currently loaded net (WFC-US46).
+   */
+  public void prepareForNetOpen() {
+    firstTimeDisplayed = false;
+  }
+
+  /**
    * Callback method which automatically gets called every time the side bar gets displayed or
    * hidden. Can be used to prepare / update the displayed content, if required.
    *
@@ -483,7 +491,7 @@ public class P2TSideBar extends JPanel implements ActionListener {
 
   /**
    * @param visible whether the P2T panel is shown
-   * @param autoGenerate when true, starts LLM generation on first display (explicit P2T menu action)
+   * @param autoGenerate when true, starts P2T analysis/generation once per net open
    */
   public void onSideBarShown(boolean visible, boolean autoGenerate) {
     if (visible) {

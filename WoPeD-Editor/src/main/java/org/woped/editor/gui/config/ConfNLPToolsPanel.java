@@ -32,7 +32,6 @@ import org.json.simple.parser.ParseException;
 import org.woped.config.general.WoPeDGeneralConfiguration;
 import org.woped.core.config.ConfigurationManager;
 import org.woped.core.utilities.SslTrustStoreInitializer;
-import org.woped.core.utilities.LlmModelFilter;
 import org.woped.editor.tools.ApiHelper;
 import org.woped.gui.lookAndFeel.WopedButton;
 import org.woped.gui.translations.Messages;
@@ -1531,11 +1530,10 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         new Thread(() -> {
             try {
                 // Provider aus der ComboBox nehmen
-                String providerItem = (String) getProviderComboBox().getSelectedItem();
-                if (providerItem == null || providerItem.isEmpty()) {
-                    providerItem = "openAi"; // Default fallback
+                String provider = (String) getProviderComboBox().getSelectedItem();
+                if (provider == null || provider.isEmpty()) {
+                    provider = "openAi"; // Default fallback
                 }
-                final String provider = providerItem;
 
                 String apiKey = "";
                 // Für LM Studio wird kein API Key benötigt
@@ -1544,18 +1542,12 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
                 }
 
                 modelComboBox.removeAllItems(); // Zuerst alte Modelle entfernen
-                final List<String> models = ApiHelper.fetchModels(apiKey, provider);
+                List<String> models = ApiHelper.fetchModels(apiKey, provider);
                 SwingUtilities.invokeLater(() -> {
-                    modelComboBox.removeAllItems();
                     for (String model : models) {
                         modelComboBox.addItem(model);
                     }
-                    String selected =
-                            LlmModelFilter.resolveSelection(
-                                    models,
-                                    ConfigurationManager.getConfiguration().getGptModel(),
-                                    provider);
-                    modelComboBox.setSelectedItem(selected);
+                    modelComboBox.setSelectedItem(ConfigurationManager.getConfiguration().getGptModel());
                 });
             } catch (IOException | ParseException e) {
                 if (silentOnError) {

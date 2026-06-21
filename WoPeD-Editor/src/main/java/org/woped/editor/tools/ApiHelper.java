@@ -15,7 +15,6 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import org.woped.core.utilities.LlmModelFilter;
 import org.woped.core.utilities.LoggerManager;
 import org.woped.editor.Constants;
 
@@ -26,11 +25,11 @@ public class ApiHelper {
 
     /**
      * Fetches the list of available model IDs directly from the selected LLM
-     * provider's API and filters them to text/chat-capable models (P2T/T2P).
+     * provider's API.
      *
      * @param apiKey   user's API key (ignored for lmStudio)
      * @param provider one of "openAi", "gemini", "lmStudio"
-     * @return alphabetically sorted list of compatible model IDs
+     * @return alphabetically sorted list of model IDs reported by the provider
      */
     public static List<String> fetchModels(String apiKey, String provider) throws IOException, ParseException {
         LoggerManager.info(Constants.EDITOR_LOGGER, "Fetching models for provider: " + provider);
@@ -125,11 +124,9 @@ public class ApiHelper {
             models.add(idStr);
         }
 
-        int beforeFilter = models.size();
-        List<String> filtered = LlmModelFilter.filterForTextGeneration(models, provider);
+        Collections.sort(models);
         LoggerManager.info(Constants.EDITOR_LOGGER,
-                "Fetched " + beforeFilter + " models from " + provider
-                        + ", " + filtered.size() + " compatible with P2T/T2P");
-        return filtered;
+                "Fetched " + models.size() + " models from " + provider);
+        return models;
     }
 }

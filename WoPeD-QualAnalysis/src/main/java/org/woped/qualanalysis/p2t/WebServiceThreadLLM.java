@@ -11,7 +11,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 import org.woped.core.config.ConfigurationManager;
-import org.woped.core.utilities.LlmModelFilter;
 import org.woped.core.controller.IEditor;
 import org.woped.core.utilities.LoggerManager;
 import org.woped.core.utilities.SslTrustStoreInitializer;
@@ -50,15 +49,6 @@ public class WebServiceThreadLLM extends Thread {
         provider = ConfigurationManager.getConfiguration().getLlmProvider();
         // WFC-US15 (#24): RAG is disabled; always send false regardless of stored config.
         useRag = "false";
-
-        if (gptModel != null
-                && provider != null
-                && !LlmModelFilter.isSupported(gptModel, provider)) {
-            errorMessage = Messages.getString("P2T.model.invalid.message");
-            isFinished = true;
-            paraphrasingPanel.showLoadingAnimation(false);
-            return;
-        }
 
         IEditor editor = paraphrasingPanel.getEditor();
         paraphrasingPanel.showLoadingAnimation(true);
