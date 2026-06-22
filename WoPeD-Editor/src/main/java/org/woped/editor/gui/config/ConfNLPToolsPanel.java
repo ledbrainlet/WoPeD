@@ -460,7 +460,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         if (providerComboBox == null) {
             providerComboBox = new JComboBox<>(new String[] { "openAi", "gemini", "lmStudio" });
             providerComboBox.setEnabled(true);
-            providerComboBox.setToolTipText("Select LLM Provider");
+            providerComboBox.setToolTipText(Messages.getString("Configuration.GPT.provider.tooltip"));
             providerComboBox.addActionListener(e -> {
                 // Nur noch Modelle leeren und API Key Sichtbarkeit ändern
                 modelComboBox.removeAllItems();
@@ -1031,12 +1031,17 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             int responseCode = connection.getResponseCode();
             String message;
             if (responseCode == 200) {
-                message = "Connection successful to " + provider + " API!";
-                JOptionPane.showMessageDialog(this, message, "Success", JOptionPane.INFORMATION_MESSAGE);
+                message = Messages.getString("Configuration.GPT.connection.success.Message",
+                        new String[]{provider});
+                JOptionPane.showMessageDialog(this, message,
+                        Messages.getString("Configuration.GPT.connection.success.Title"),
+                        JOptionPane.INFORMATION_MESSAGE);
             } else {
                 message = Messages.getString("Configuration.GPT.connection.failed.Title")
                         + responseCode + " (" + provider + ")";
-                JOptionPane.showMessageDialog(this, message, "Connection Failed", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, message,
+                        Messages.getString("Configuration.GPT.connection.failed.DialogTitle"),
+                        JOptionPane.ERROR_MESSAGE);
             }
 
         } catch (IOException e) {
@@ -1061,7 +1066,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         if (modelComboBox == null) {
             modelComboBox = new JComboBox<>();
             modelComboBox.setEnabled(true);
-            modelComboBox.setToolTipText("Select a model");
+            modelComboBox.setToolTipText(Messages.getString("Configuration.GPT.model.tooltip"));
         }
         return modelComboBox;
     }

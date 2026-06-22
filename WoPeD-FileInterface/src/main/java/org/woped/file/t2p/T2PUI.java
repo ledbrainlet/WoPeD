@@ -241,7 +241,7 @@ public class T2PUI extends JDialog {
         buttonPanel.add(btnErase);
         buttonPanel.add(langBox);
         buttonPanel.add(Box.createHorizontalGlue()); // Pushes following components to the right
-        buttonPanel.add(new JLabel("LLM Provider:"));
+        buttonPanel.add(new JLabel(Messages.getString("T2PUI.LLM.Provider.label")));
         buttonPanel.add(Box.createRigidArea(new Dimension(5, 0)));
         buttonPanel.add(llmProviderBox);
         buttonPanel.add(Box.createRigidArea(new Dimension(10, 0))); // Spacing before generate button
@@ -318,11 +318,12 @@ public class T2PUI extends JDialog {
      * @return the API key entered by the user, or null if canceled
      */
     String promptForApiKey(String provider) {
-        String message = String.format("Please enter your %s API key:", provider);
+        String message = Messages.getString("T2PUI.LLM.ApiKey.input.Message",
+                new String[]{provider});
         String apiKey = JOptionPane.showInputDialog(
                 this,
                 message,
-                "API Key Required",
+                Messages.getString("T2PUI.LLM.ApiKey.input.Title"),
                 JOptionPane.QUESTION_MESSAGE);
 
         return apiKey;
@@ -554,8 +555,9 @@ public class T2PUI extends JDialog {
                     // Handle all other exceptions and show a generic error dialog
                     JOptionPane.showMessageDialog(
                             null,
-                            "Error connecting to LLM service: " + e.getMessage(),
-                            "LLM Connection Error",
+                            Messages.getString("T2PUI.LLM.Connection.Error.Message",
+                                    new String[]{e.getMessage()}),
+                            Messages.getString("T2PUI.LLM.Connection.Error.Title"),
                             JOptionPane.ERROR_MESSAGE);
                 } finally {
                     if (connection != null) {
