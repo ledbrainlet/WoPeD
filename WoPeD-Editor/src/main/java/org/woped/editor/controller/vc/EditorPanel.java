@@ -190,9 +190,9 @@ public class EditorPanel extends JPanel {
         p2tSideBar.prepareForNetOpen();
       }
       if (!p2TBarVisible) {
-        showP2TBar(true);
+        showP2TBar(false);
       } else {
-        p2tSideBar.onSideBarShown(true, true);
+        p2tSideBar.onSideBarShown(true, false);
         int dividerLocation = resolveSidebarDividerLocation();
         if (mainsplitPaneWithP2TBar != null) {
           mainsplitPaneWithP2TBar.setDividerLocation(dividerLocation);
@@ -231,6 +231,28 @@ public class EditorPanel extends JPanel {
       return width - editorSize.SIDEBAR_WIDTH;
     }
     return m_splitPosition;
+  }
+
+  /** Expands the main horizontal split to the default sidebar width (e.g. when toggling from ribbon). */
+  private void expandMainSplitPaneForSidebar() {
+    if (m_mainSplitPane == null) {
+      return;
+    }
+    Runnable expand =
+        () -> {
+          int dividerLocation = resolveSidebarDividerLocation();
+          m_mainSplitPane.setDividerLocation(dividerLocation);
+          m_mainSplitPane.setLastDividerLocation(dividerLocation);
+          m_mainSplitPane.setOneTouchExpandable(true);
+          m_mainSplitPane.setEnabled(true);
+          m_mainSplitPane.setResizeWeight(0.85);
+          checkMainSplitPaneDivider();
+        };
+    if (SwingUtilities.isEventDispatchThread()) {
+      expand.run();
+    } else {
+      SwingUtilities.invokeLater(expand);
+    }
   }
 
   /** Sizes the editor internal frame to a comfortable share of the available desktop area. */
@@ -482,9 +504,7 @@ public class EditorPanel extends JPanel {
           && !isMetricsBarVisible()
           && !isTreeviewPanelVisible()
           && !isP2TBarVisible()) {
-        m_mainSplitPane.setDividerLocation(m_mainSplitPane.getLastDividerLocation());
-        m_mainSplitPane.setOneTouchExpandable(true);
-        m_mainSplitPane.setEnabled(true);
+        expandMainSplitPaneForSidebar();
       }
       if (isAnalysisBarVisible() || isMetricsBarVisible() || isP2TBarVisible()) {
         m_rightSideTreeViewWithAnalysisBar.setEnabled(true);
@@ -540,9 +560,7 @@ public class EditorPanel extends JPanel {
           && !isAnalysisBarVisible()
           && !isMetricsBarVisible()
           && !isP2TBarVisible()) {
-        m_mainSplitPane.setDividerLocation(m_mainSplitPane.getLastDividerLocation());
-        m_mainSplitPane.setOneTouchExpandable(true);
-        m_mainSplitPane.setEnabled(true);
+        expandMainSplitPaneForSidebar();
       }
       if (isAnalysisBarVisible() || isMetricsBarVisible() || isP2TBarVisible()) {
         if (isOverviewPanelVisible()) {
@@ -1136,7 +1154,7 @@ public class EditorPanel extends JPanel {
   }
 
   /**
-   * @param autoGenerate when true, triggers LLM text generation on first display (menu action)
+   * @param autoGenerate when true, triggers LLM text generation once (ribbon/dialog); false on net open
    */
   public void showP2TBar(boolean autoGenerate) {
     if (p2TBarVisible) {

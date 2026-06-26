@@ -472,8 +472,8 @@ public class P2TSideBar extends JPanel implements ActionListener {
   }
 
   /**
-   * Resets auto-generation state so the next {@link #onSideBarShown(boolean, boolean)} with
-   * {@code autoGenerate=true} runs P2T once for the currently loaded net (WFC-US46).
+   * Resets P2T auto-generation state for the next explicit user-triggered text generation
+   * (WFC-US46).
    */
   public void prepareForNetOpen() {
     firstTimeDisplayed = false;
@@ -491,26 +491,31 @@ public class P2TSideBar extends JPanel implements ActionListener {
 
   /**
    * @param visible whether the P2T panel is shown
-   * @param autoGenerate when true, starts P2T analysis/generation once per net open
+   * @param autoGenerate when true, starts LLM text generation once (explicit user action)
    */
   public void onSideBarShown(boolean visible, boolean autoGenerate) {
-    if (visible) {
-      updateProviderLabel();
-      enableButtons(true);
+    if (!visible) {
+      return;
     }
+
+    updateProviderLabel();
+    enableButtons(true);
 
     IQualanalysisService analyseService =
         QualAnalysisServiceFactory.createNewQualAnalysisService(editor);
     if (!analyseService.isSound()) {
-      if (visible) {
-        showErrorInSidebar(Messages.getString("PetriNet.NotSound"));
-      }
+      showErrorInSidebar(Messages.getString("PetriNet.NotSound"));
       return;
     }
 
-    if (visible && autoGenerate && !firstTimeDisplayed) {
+    if (autoGenerate && !firstTimeDisplayed) {
       getText();
       firstTimeDisplayed = true;
+      return;
     }
+
+    // Sound net on open: clear stale errors/text from a previously loaded model (WFC-US46).
+    textpane.setText("");
+    naturalTextParser = null;
   }
 }
