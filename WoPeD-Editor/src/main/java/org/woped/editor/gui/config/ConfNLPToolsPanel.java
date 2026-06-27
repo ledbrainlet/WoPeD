@@ -29,6 +29,7 @@ import javax.swing.event.DocumentListener;
 
 import org.json.simple.parser.ParseException;
 import org.woped.core.config.ConfigurationManager;
+import org.woped.core.config.DefaultStaticConfiguration;
 import org.woped.core.utilities.SslTrustStoreInitializer;
 import org.woped.editor.tools.ApiHelper;
 import org.woped.gui.lookAndFeel.WopedButton;
@@ -941,14 +942,8 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             // WFC-US9 (#12): tooltip explains the role of this text as an extension to the
             // base prompt that WoPeD assembles before sending the LLM request.
             promptText.setToolTipText(Messages.getString("Configuration.GPT.tool.tip.text.Title"));
-            // The default value below is the full LLM instruction that is sent to the
-            // webservice as the &prompt= parameter (the server forwards it to the model).
-            // Prof. Freytag's "Zusatz-Prompt" / "Prompt Extension" vision treats this field
-            // as an extension to a server-side base prompt, but until the server is updated
-            // to provide its own base prompt we keep the complete instruction here so that
-            // generation actually works.
-            promptText.setText(
-                    "Create a clearly structured and comprehensible continuous text from the given BPMN that is understandable for an uninformed reader. The text should be easy to read in the summary and contain all important content; if there are subdivided points, these are integrated into the text with suitable sentence beginnings in order to obtain a well-structured and easy-to-read text. Under no circumstances should the output contain sub-items or paragraphs, but should cover all processes in one piece!");
+            // WFC-US34: full LLM instruction sent as the &prompt= parameter (see DefaultStaticConfiguration).
+            promptText.setText(DefaultStaticConfiguration.DEFAULT_P2T_PROMPT);
         }
         return promptText;
     }
@@ -1085,8 +1080,8 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         getProviderComboBox().setSelectedItem(ConfigurationManager.getStandardConfiguration().getLlmProvider());
         getApiKeyText().setText(ConfigurationManager.getStandardConfiguration().getGptApiKey());
         getShowAgainBox().setSelected(ConfigurationManager.getStandardConfiguration().getGptShowAgain());
-        getPromptText().setText(ConfigurationManager.getStandardConfiguration().getGptPrompt());
-        getPromptTextT2P().setText(ConfigurationManager.getStandardConfiguration().getGptPromptT2P());
+        getPromptText().setText(DefaultStaticConfiguration.DEFAULT_P2T_PROMPT);
+        getPromptTextT2P().setText(DefaultStaticConfiguration.DEFAULT_T2P_PROMPT);
     }
 
     private JComboBox<String> getModelComboBox() {
@@ -1466,6 +1461,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         getServerURLText().setText(ConfigurationManager.getStandardConfiguration().getProcess2TextServerHost());
         getManagerPathText().setText(ConfigurationManager.getStandardConfiguration().getProcess2TextServerURI());
         getServerPortText().setText("" + ConfigurationManager.getStandardConfiguration().getProcess2TextServerPort());
+        getPromptText().setText(DefaultStaticConfiguration.DEFAULT_P2T_PROMPT);
     }
 
     private void setDefaultValues_T2P() {
@@ -1473,6 +1469,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         getManagerPathText_T2P().setText(ConfigurationManager.getStandardConfiguration().getText2ProcessServerURI());
         getServerPortText_T2P()
                 .setText("" + ConfigurationManager.getStandardConfiguration().getText2ProcessServerPort());
+        getPromptTextT2P().setText(DefaultStaticConfiguration.DEFAULT_T2P_PROMPT);
     }
 
     class CheckboxListener implements ItemListener {
