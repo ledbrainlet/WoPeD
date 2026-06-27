@@ -907,14 +907,8 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             // WFC-US9 (#12): tooltip explains the role of this text as an extension to the
             // base prompt that WoPeD assembles before sending the LLM request.
             promptText.setToolTipText(Messages.getString("Configuration.GPT.tool.tip.text.Title"));
-            // The default value below is the full LLM instruction that is sent to the
-            // webservice as the &prompt= parameter (the server forwards it to the model).
-            // Prof. Freytag's "Zusatz-Prompt" / "Prompt Extension" vision treats this field
-            // as an extension to a server-side base prompt, but until the server is updated
-            // to provide its own base prompt we keep the complete instruction here so that
-            // generation actually works.
-            promptText.setText(
-                    "Create a clearly structured and comprehensible continuous text from the given BPMN that is understandable for an uninformed reader. The text should be easy to read in the summary and contain all important content; if there are subdivided points, these are integrated into the text with suitable sentence beginnings in order to obtain a well-structured and easy-to-read text. Under no circumstances should the output contain sub-items or paragraphs, but should cover all processes in one piece!");
+            // WFC-US34: full LLM instruction sent as the &prompt= parameter (see DefaultStaticConfiguration).
+            promptText.setText(WoPeDGeneralConfiguration.getBuiltinGptPrompt());
         }
         return promptText;
     }

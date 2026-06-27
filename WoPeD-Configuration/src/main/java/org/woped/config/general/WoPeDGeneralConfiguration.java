@@ -20,6 +20,7 @@ import org.woped.config.Registration;
 import org.woped.config.WoPeDConfiguration;
 import org.woped.config.metrics.WoPeDMetricsConfiguration;
 import org.woped.core.config.ConfigurationManager;
+import org.woped.core.config.DefaultStaticConfiguration;
 import org.woped.core.config.IGeneralConfiguration;
 import org.woped.core.utilities.LoggerManager;
 
@@ -192,7 +193,7 @@ public class WoPeDGeneralConfiguration extends WoPeDConfiguration implements IGe
         && d.getConfiguration().getGpt().isSetGptPrompt()) {
       return d.getConfiguration().getGpt().getGptPrompt();
     }
-    return ConfigurationManager.getStandardConfiguration().getGptPrompt();
+    return DefaultStaticConfiguration.DEFAULT_P2T_PROMPT;
   }
 
   /** T2P default prompt from the bundled WoPeDconfig.xml (code default as last resort). */
@@ -204,7 +205,7 @@ public class WoPeDGeneralConfiguration extends WoPeDConfiguration implements IGe
         && d.getConfiguration().getGpt().isSetGptPromptT2P()) {
       return d.getConfiguration().getGpt().getGptPromptT2P();
     }
-    return ConfigurationManager.getStandardConfiguration().getGptPromptT2P();
+    return DefaultStaticConfiguration.DEFAULT_T2P_PROMPT;
   }
 
   /**

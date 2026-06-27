@@ -13,6 +13,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.BorderFactory;
 import javax.swing.SwingConstants;
 import javax.swing.event.HyperlinkEvent;
@@ -161,8 +162,13 @@ public class P2TSideBar extends JPanel implements ActionListener {
     textpane.setEditable(false);
     textpane.setMinimumSize(new Dimension(150, 100));
 
+    JScrollPane textScrollPane = new JScrollPane(textpane);
+    textScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+    textScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+    textScrollPane.setBorder(BorderFactory.createEmptyBorder());
+
     this.add(labelLoading, BorderLayout.SOUTH);
-    this.add(textpane, BorderLayout.CENTER);
+    this.add(textScrollPane, BorderLayout.CENTER);
   }
 
   /**
