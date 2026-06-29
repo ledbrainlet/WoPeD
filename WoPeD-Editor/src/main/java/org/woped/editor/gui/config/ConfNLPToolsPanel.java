@@ -70,7 +70,6 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
     private JCheckBox showAgainBox = null;
     private WopedButton resetButton = null;
     private JTextArea promptText = null;
-    private JTextArea promptTextT2P = null;
     private WopedButton fetchGPTModelsButton = null;
     private WopedButton checkConnectionButton = null;
     private JComboBox<String> modelComboBox = new JComboBox<String>();
@@ -155,7 +154,6 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         ConfigurationManager.getConfiguration().setGptApiKey(getApiKeyText().getText());
         ConfigurationManager.getConfiguration().setGptShowAgain(getShowAgainBox().isSelected());
         ConfigurationManager.getConfiguration().setGptPrompt(getPromptText().getText());
-        ConfigurationManager.getConfiguration().setGptPromptT2P(getPromptTextT2P().getText());
         ConfigurationManager.getConfiguration().setT2PLlmServiceHost(getServiceUrlText_LLM().getText());
         if (getServicePortText_LLM().getText().isEmpty()) {
             ConfigurationManager.getConfiguration().setT2PLlmServicePort(0);
@@ -196,7 +194,6 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             getApiKeyText().setText(ConfigurationManager.getConfiguration().getGptApiKey());
             getShowAgainBox().setSelected(ConfigurationManager.getConfiguration().getGptShowAgain());
             getPromptText().setText(ConfigurationManager.getConfiguration().getGptPrompt());
-            getPromptTextT2P().setText(ConfigurationManager.getConfiguration().getGptPromptT2P());
             getServiceUrlText_LLM().setText(ConfigurationManager.getConfiguration().getT2PLlmServiceHost());
             getServicePortText_LLM().setText("" + ConfigurationManager.getConfiguration().getT2PLlmServicePort());
             getServiceUriText_LLM().setText(ConfigurationManager.getConfiguration().getT2PLlmServiceUri());
@@ -454,12 +451,10 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             settingsPanel_T2P.add(getServiceUriText_LLM(), c);
             c.fill = GridBagConstraints.NONE; c.gridwidth = 1; row++;
 
-            // T2P-Prompt (WFC-US22)
-            c.weightx = 0; c.gridx = 0; c.gridy = row;
-            settingsPanel_T2P.add(createSettingsLabel(Messages.getString("Configuration.GPT.prompt.T2P.Title")), c);
-            c.weightx = 1; c.gridx = 1; c.gridy = row; c.gridwidth = 3; c.fill = GridBagConstraints.HORIZONTAL;
-            settingsPanel_T2P.add(getPromptTextScrollPaneT2P(), c);
-            c.fill = GridBagConstraints.NONE; c.gridwidth = 1;
+            // WFC: "Auf Standard zuruecksetzen" below the LLM server settings.
+            c.weightx = 0; c.gridx = 0; c.gridy = row; c.gridwidth = 2;
+            settingsPanel_T2P.add(getDefaultButton_LLM(), c);
+            c.gridwidth = 1;
         }
 
         settingsPanel_T2P.setVisible(getUseBox().isSelected());
@@ -934,7 +929,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         if (promptText == null) {
             promptText = new JTextArea();
             promptText.setColumns(40);
-            // WFC-US22 (#27): 4 rows so two prompt areas (T2P + P2T) fit comfortably.
+            // WFC-US22 (#27): 4 rows so the P2T prompt area fits comfortably.
             promptText.setRows(4);
             promptText.setLineWrap(true);
             promptText.setWrapStyleWord(true);
@@ -946,26 +941,6 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             promptText.setText(DefaultStaticConfiguration.DEFAULT_P2T_PROMPT);
         }
         return promptText;
-    }
-
-    /** WFC-US22 (#27): editable T2P (Text -> Prozess) prompt template. */
-    private JTextArea getPromptTextT2P() {
-        if (promptTextT2P == null) {
-            promptTextT2P = new JTextArea();
-            promptTextT2P.setColumns(40);
-            promptTextT2P.setRows(4);
-            promptTextT2P.setLineWrap(true);
-            promptTextT2P.setWrapStyleWord(true);
-            promptTextT2P.setEnabled(true);
-            promptTextT2P.setToolTipText(Messages.getString("Configuration.GPT.prompt.T2P.tooltip"));
-        }
-        return promptTextT2P;
-    }
-
-    private JScrollPane getPromptTextScrollPaneT2P() {
-        JScrollPane sp = new JScrollPane(getPromptTextT2P());
-        sp.setPreferredSize(new Dimension(520, 100));
-        return sp;
     }
 
     private JCheckBox getShowAgainBox() {
@@ -1081,7 +1056,6 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         getApiKeyText().setText(ConfigurationManager.getStandardConfiguration().getGptApiKey());
         getShowAgainBox().setSelected(ConfigurationManager.getStandardConfiguration().getGptShowAgain());
         getPromptText().setText(DefaultStaticConfiguration.DEFAULT_P2T_PROMPT);
-        getPromptTextT2P().setText(DefaultStaticConfiguration.DEFAULT_T2P_PROMPT);
     }
 
     private JComboBox<String> getModelComboBox() {
@@ -1319,15 +1293,16 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
 
             String portPart = rawPort.isEmpty() ? "" : ":" + rawPort;
 
-            // Normalize path and append test endpoint only once.
+            // Normalize path and append v2 health endpoint only once.
             String normalizedPath = rawPath.isEmpty() ? "" : (rawPath.startsWith("/") ? rawPath : "/" + rawPath);
-            if (!normalizedPath.endsWith("/test_connection")) {
-                normalizedPath = normalizedPath + (normalizedPath.endsWith("/") ? "" : "/") + "test_connection";
+            if (!normalizedPath.endsWith("/v2/health")) {
+                normalizedPath = normalizedPath + (normalizedPath.endsWith("/") ? "" : "/") + "v2/health";
             }
 
             URL url = new URL(scheme + hostPart + portPart + normalizedPath);
             HttpURLConnection httpConnection = (HttpURLConnection) url.openConnection();
             httpConnection.setRequestMethod("GET");
+            httpConnection.setRequestProperty("Accept", "application/json");
             httpConnection.setConnectTimeout(10000);
             httpConnection.setReadTimeout(10000);
 
@@ -1335,10 +1310,15 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
 
             if (responseCode == 200) {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(httpConnection.getInputStream()));
-                String response = reader.readLine();
+                StringBuilder responseBuilder = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    responseBuilder.append(line);
+                }
                 reader.close();
+                String response = responseBuilder.toString();
 
-                if (response != null && response.contains("Successful")) {
+                if (response.contains("\"status\"") && response.contains("ok")) {
                     arg[1] = "LLM";
                     JOptionPane.showMessageDialog(
                             this.getSettingsPanel_T2P(),
@@ -1469,7 +1449,6 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         getManagerPathText_T2P().setText(ConfigurationManager.getStandardConfiguration().getText2ProcessServerURI());
         getServerPortText_T2P()
                 .setText("" + ConfigurationManager.getStandardConfiguration().getText2ProcessServerPort());
-        getPromptTextT2P().setText(DefaultStaticConfiguration.DEFAULT_T2P_PROMPT);
     }
 
     class CheckboxListener implements ItemListener {
