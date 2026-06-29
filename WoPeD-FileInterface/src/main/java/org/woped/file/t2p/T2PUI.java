@@ -1,4 +1,4 @@
-﻿/*
+/*
  *
  * Copyright (C) 2004-2005, see @author in JavaDoc for the author
  *

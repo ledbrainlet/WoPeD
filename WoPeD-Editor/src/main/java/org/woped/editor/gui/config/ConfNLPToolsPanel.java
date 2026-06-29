@@ -31,6 +31,7 @@ import javax.swing.event.DocumentListener;
 import org.json.simple.parser.ParseException;
 import org.woped.config.general.WoPeDGeneralConfiguration;
 import org.woped.core.config.ConfigurationManager;
+import org.woped.core.config.DefaultStaticConfiguration;
 import org.woped.core.utilities.SslTrustStoreInitializer;
 import org.woped.editor.tools.ApiHelper;
 import org.woped.gui.lookAndFeel.WopedButton;
@@ -1313,7 +1314,6 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         getServiceUrlText_LLM().setText(ConfigurationManager.getStandardConfiguration().getT2PLlmServiceHost());
         getServicePortText_LLM().setText("" + ConfigurationManager.getStandardConfiguration().getT2PLlmServicePort());
         getServiceUriText_LLM().setText("" + ConfigurationManager.getStandardConfiguration().getT2PLlmServiceUri());
-        getPromptTextT2P().setText(WoPeDGeneralConfiguration.getBuiltinGptPromptT2P());
     }
 
     private void testProcess2TextConnection() {
