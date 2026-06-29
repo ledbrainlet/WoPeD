@@ -3,6 +3,7 @@ package org.woped.editor.gui.config;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -28,8 +29,8 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import org.json.simple.parser.ParseException;
+import org.woped.config.general.WoPeDGeneralConfiguration;
 import org.woped.core.config.ConfigurationManager;
-import org.woped.core.config.DefaultStaticConfiguration;
 import org.woped.core.utilities.SslTrustStoreInitializer;
 import org.woped.editor.tools.ApiHelper;
 import org.woped.gui.lookAndFeel.WopedButton;
@@ -54,24 +55,24 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
     private JTextField serverPortText = null;
     private JTextField managerPathText = null;
     private JLabel managerPathLabel = null;
-    private WopedButton testButton = null;
-    private WopedButton defaultButton = null;
+    private JButton testButton = null;
+    private JButton defaultButton = null;
     private JTextField serverURLText_T2P = null;
     private JLabel serverURLLabel_T2P = null;
     private JLabel serverPortLabel_T2P = null;
     private JTextField serverPortText_T2P = null;
     private JTextField managerPathText_T2P = null;
     private JLabel managerPathLabel_T2P = null;
-    private WopedButton testButton_T2P = null;
-    private WopedButton defaultButton_T2P = null;
+    private JButton testButton_T2P = null;
+    private JButton defaultButton_T2P = null;
 
     // Components for additionalPanel
     private JTextField apiKeyText = null;
     private JCheckBox showAgainBox = null;
-    private WopedButton resetButton = null;
+    private JButton resetButton = null;
     private JTextArea promptText = null;
     private WopedButton fetchGPTModelsButton = null;
-    private WopedButton checkConnectionButton = null;
+    private JButton checkConnectionButton = null;
     private JComboBox<String> modelComboBox = new JComboBox<String>();
 
     // Components for LLM Panel
@@ -81,8 +82,8 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
     private JLabel servicePortLabel_LLM = null;
     private JTextField serviceUriText_LLM = null;
     private JLabel serviceUriLabel_LLM = null;
-    private WopedButton testButton_LLM = null;
-    private WopedButton defaultButton_LLM = null;
+    private JButton testButton_LLM = null;
+    private JButton defaultButton_LLM = null;
     // Neue Felder hinzufügen (nach den anderen privaten Feldern):
     private JLabel providerLabel = null;
     private JComboBox<String> providerComboBox = null;
@@ -250,7 +251,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
     private JTextField getServerURLText() {
         if (serverURLText == null) {
             serverURLText = new JTextField();
-            serverURLText.setColumns(40);
+            serverURLText.setColumns(20);
             serverURLText.setEnabled(true);
             serverURLText
                     .setToolTipText("<html>" + Messages.getString("Configuration.P2T.Label.ServerHost") + "</html>");
@@ -315,65 +316,45 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             settingsPanel.setBorder(BorderFactory.createCompoundBorder(
                     BorderFactory.createTitledBorder(Messages.getString("Configuration.P2T.Settings.Panel.Title")),
                     BorderFactory.createEmptyBorder(10, 10, 10, 10)));
-            c.weightx = 0;
-            c.gridx = 0;
-            c.gridy = 0;
-            settingsPanel.add(alignSettingsLabel(getServerURLLabel()), c);
+            // WFC: URL, Port, URI and the test-connection button in one row.
+            JPanel serverRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+            serverRow.add(getServerURLLabel());
+            serverRow.add(getServerURLText());
+            serverRow.add(getServerPortLabel());
+            serverRow.add(getServerPortText());
+            serverRow.add(getManagerPathLabel());
+            serverRow.add(getManagerPathText());
+            serverRow.add(getTestButton());
 
             c.weightx = 1;
-            c.gridx = 1;
+            c.gridx = 0;
             c.gridy = 0;
             c.gridwidth = 2;
             c.fill = GridBagConstraints.HORIZONTAL;
-            settingsPanel.add(getServerURLText(), c);
+            settingsPanel.add(serverRow, c);
             c.fill = GridBagConstraints.NONE;
-
-            c.weightx = 0;
-            c.gridx = 0;
-            c.gridy = 1;
             c.gridwidth = 1;
-            settingsPanel.add(alignSettingsLabel(getServerPortLabel()), c);
-
-            c.weightx = 0;
-            c.gridx = 1;
-            c.gridy = 1;
-            settingsPanel.add(getServerPortText(), c);
-
-            c.weightx = 0;
-            c.gridx = 2;
-            c.gridy = 1;
-            settingsPanel.add(getTestButton(), c);
-
-            c.weightx = 0;
-            c.gridx = 0;
-            c.gridy = 2;
-            settingsPanel.add(alignSettingsLabel(getManagerPathLabel()), c);
-
-            c.weightx = 1;
-            c.gridx = 1;
-            c.gridy = 2;
-            c.gridwidth = 2;
-            c.fill = GridBagConstraints.HORIZONTAL;
-            settingsPanel.add(getManagerPathText(), c);
-            c.fill = GridBagConstraints.NONE;
-
-            c.weightx = 0;
-            c.gridx = 3;
-            c.gridy = 1;
-            settingsPanel.add(getDefaultButton(), c);
 
             // WFC-US22 (#27): P2T-Prompt under the server settings
             c.weightx = 0;
             c.gridx = 0;
-            c.gridy = 3;
-            c.gridwidth = 1;
+            c.gridy = 1;
             settingsPanel.add(createSettingsLabel(Messages.getString("Configuration.GPT.prompt.P2T.Title")), c);
 
             c.weightx = 1;
             c.gridx = 1;
-            c.gridy = 3;
-            c.gridwidth = 3;
+            c.gridy = 1;
+            c.fill = GridBagConstraints.HORIZONTAL;
             settingsPanel.add(getPromptTextScrollPane(), c);
+            c.fill = GridBagConstraints.NONE;
+
+            // WFC: "Auf Standard zuruecksetzen" below the last setting (the prompt).
+            c.weightx = 0;
+            c.gridx = 0;
+            c.gridy = 2;
+            c.gridwidth = 2;
+            settingsPanel.add(getDefaultButton(), c);
+            c.gridwidth = 1;
 
         }
 
@@ -395,7 +376,12 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
 
             int row = 0;
 
-            // --- NLP-Subsektion (WFC-US26): merged into a single T2P block ---
+            // --- NLP-Subsektion (WFC-US26): auf Wunsch ausgeblendet ---
+            // Im T2P-Block werden nur noch die LLM-Servereinstellungen benoetigt.
+            // Der NLP-UI-Code bleibt erhalten (nur auskommentiert) und kann bei
+            // Bedarf wieder eingeblendet werden. Getter, applyConfiguration() und
+            // restoreValues() bleiben unveraendert aktiv (Persistenz unberuehrt).
+            /*
             c.weightx = 0; c.gridx = 0; c.gridy = row; c.gridwidth = 4;
             settingsPanel_T2P.add(new JLabel("<html><b>"
                     + Messages.getString("Configuration.T2P.Settings.Panel.Title_NLP") + "</b></html>"), c);
@@ -422,33 +408,32 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             c.weightx = 1; c.gridx = 1; c.gridy = row; c.gridwidth = 2; c.fill = GridBagConstraints.HORIZONTAL;
             settingsPanel_T2P.add(getManagerPathText_T2P(), c);
             c.fill = GridBagConstraints.NONE; c.gridwidth = 1; row++;
+            */
 
             // --- LLM-Subsektion (WFC-US26) ---
+            // Fette Unter-Ueberschrift "LLM" ausgeblendet: nachdem die NLP-Subsektion
+            // entfernt wurde, ist der einzige verbleibende Block ohnehin LLM -> redundant.
+            // Code bleibt erhalten (nur auskommentiert).
+            /*
             c.weightx = 0; c.gridx = 0; c.gridy = row; c.gridwidth = 4; c.insets = new Insets(12, 0, 2, 0);
             settingsPanel_T2P.add(new JLabel("<html><b>"
                     + Messages.getString("Configuration.T2P.Settings.Panel.Title_LLM") + "</b></html>"), c);
             c.insets = new Insets(2, 0, 2, 0); c.gridwidth = 1; row++;
+            */
 
-            c.weightx = 0; c.gridx = 0; c.gridy = row;
-            settingsPanel_T2P.add(alignSettingsLabel(getServiceUrlLabel_LLM()), c);
-            c.weightx = 1; c.gridx = 1; c.gridy = row; c.gridwidth = 2; c.fill = GridBagConstraints.HORIZONTAL;
-            settingsPanel_T2P.add(getServiceUrlText_LLM(), c);
-            c.fill = GridBagConstraints.NONE; c.gridwidth = 1; row++;
+            // WFC: LLM service URL, Port, URI and the test-connection button in one row.
+            JPanel serverRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+            serverRow.add(getServiceUrlLabel_LLM());
+            serverRow.add(getServiceUrlText_LLM());
+            serverRow.add(getServicePortLabel_LLM());
+            serverRow.add(getServicePortText_LLM());
+            serverRow.add(getServiceUriLabel_LLM());
+            serverRow.add(getServiceUriText_LLM());
+            serverRow.add(getTestButton_LLM());
 
-            c.weightx = 0; c.gridx = 0; c.gridy = row;
-            settingsPanel_T2P.add(alignSettingsLabel(getServicePortLabel_LLM()), c);
-            c.weightx = 0; c.gridx = 1; c.gridy = row;
-            settingsPanel_T2P.add(getServicePortText_LLM(), c);
-            c.weightx = 0; c.gridx = 2; c.gridy = row;
-            settingsPanel_T2P.add(getTestButton_LLM(), c);
-            c.weightx = 0; c.gridx = 3; c.gridy = row;
-            settingsPanel_T2P.add(getDefaultButton_LLM(), c);
-            row++;
-
-            c.weightx = 0; c.gridx = 0; c.gridy = row;
-            settingsPanel_T2P.add(alignSettingsLabel(getServiceUriLabel_LLM()), c);
-            c.weightx = 1; c.gridx = 1; c.gridy = row; c.gridwidth = 2; c.fill = GridBagConstraints.HORIZONTAL;
-            settingsPanel_T2P.add(getServiceUriText_LLM(), c);
+            c.weightx = 1; c.gridx = 0; c.gridy = row; c.gridwidth = 2;
+            c.fill = GridBagConstraints.HORIZONTAL;
+            settingsPanel_T2P.add(serverRow, c);
             c.fill = GridBagConstraints.NONE; c.gridwidth = 1; row++;
 
             // WFC: "Auf Standard zuruecksetzen" below the LLM server settings.
@@ -465,7 +450,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         if (providerComboBox == null) {
             providerComboBox = new JComboBox<>(new String[] { "openAi", "gemini", "lmStudio" });
             providerComboBox.setEnabled(true);
-            providerComboBox.setToolTipText("Select LLM Provider");
+            providerComboBox.setToolTipText(Messages.getString("Configuration.GPT.provider.tooltip"));
             providerComboBox.addActionListener(e -> {
                 // Nur noch Modelle leeren und API Key Sichtbarkeit ändern
                 modelComboBox.removeAllItems();
@@ -534,90 +519,64 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
                     BorderFactory.createTitledBorder(Messages.getString("Configuration.GPT.settings.Title")),
                     BorderFactory.createEmptyBorder(10, 10, 10, 10)));
 
-            // Provider Selection (Row 0)
-            c.weightx = 0;
-            c.gridx = 0;
-            c.gridy = 0;
-            c.gridwidth = 1;
-            settingsPanel_GPT.add(alignSettingsLabel(getProviderLabel()), c);
+            // WFC: Provider and Model side by side (Row 0)
+            JPanel providerModelRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+            providerModelRow.add(getProviderLabel());
+            providerModelRow.add(getProviderComboBox());
+            providerModelRow.add(Box.createHorizontalStrut(12));
+            providerModelRow.add(new JLabel(Messages.getString("Configuration.GPT.model.Title")));
+            providerModelRow.add(getModelComboBox());
 
             c.weightx = 1;
-            c.gridx = 1;
-            c.gridy = 0;
-            c.fill = GridBagConstraints.HORIZONTAL;
-            settingsPanel_GPT.add(getProviderComboBox(), c);
-
-            // Model Selection (Row 1) — directly under Provider per Prof. Freytag's
-            // request in WFC-US5 (#6).
-            c.weightx = 0;
             c.gridx = 0;
-            c.gridy = 1;
-            c.gridwidth = 1;
+            c.gridy = 0;
+            c.gridwidth = 2;
+            c.fill = GridBagConstraints.HORIZONTAL;
+            settingsPanel_GPT.add(providerModelRow, c);
             c.fill = GridBagConstraints.NONE;
-            settingsPanel_GPT.add(createSettingsLabel(Messages.getString("Configuration.GPT.model.Title")), c);
+            c.gridwidth = 1;
 
-            c.weightx = 1;
-            c.gridx = 1;
-            c.gridy = 1;
-            c.insets = new Insets(2, 0, 2, 12);
-            c.fill = GridBagConstraints.HORIZONTAL;
-            settingsPanel_GPT.add(getModelComboBox(), c);
+            // WFC-US23 (#28): the "GPT-Modelle abrufen" button stays hidden; model
+            // fetching runs automatically on dialog open (WFC-US6) and on provider
+            // change (WFC-US5).
 
-            // WFC-US23 (#28): the "GPT-Modelle abrufen" button is hidden from
-            // the UI per Prof. Freytag's feedback on 2026-05-11. Model fetching
-            // now runs automatically when the dialog opens (WFC-US6) and on
-            // provider change (WFC-US5). The block below is left commented out
-            // so it can be re-enabled cleanly (e.g. as an icon button in
-            // WFC-US24).
-            // c.weightx = 0;
-            // c.gridx = 2;
-            // c.gridy = 1;
-            // c.fill = GridBagConstraints.NONE;
-            // c.insets = new Insets(2, 0, 2, 10);
-            // settingsPanel_GPT.add(getFetchGPTModelsButton(), c);
-
-            // API Key (Row 2) — Label als Variable speichern für spätere Referenz
+            // API Key (Row 1) — label added directly to the panel so the lmStudio
+            // show/hide logic below can still find it by its text.
             JLabel apiKeyLabel = createSettingsLabel(Messages.getString("Configuration.GPT.apikey.Title"));
             c.weightx = 0;
             c.gridx = 0;
-            c.gridy = 2;
+            c.gridy = 1;
             c.insets = new Insets(2, 0, 2, 0);
             c.fill = GridBagConstraints.NONE;
             settingsPanel_GPT.add(apiKeyLabel, c);
 
             c.weightx = 1;
             c.gridx = 1;
-            c.gridy = 2;
+            c.gridy = 1;
             c.gridwidth = 1;
             settingsPanel_GPT.add(getApiKeyAndStatus(), c);
 
-            // WFC-US15 (#24): RAG checkbox removed from the LLM Tools UI.
-
-            // WFC-US22 (#27): the T2P/P2T prompts moved into their respective
-            // server-settings panels (getSettingsPanel for P2T, getSettingsPanel_T2P
-            // for the merged T2P block, WFC-US26). GPT-Einstellungen keeps only provider/key/model.
-
-            // Show Again Checkbox (Row 3)
-            c.weightx = 1;
-            c.gridx = 0;
-            c.gridy = 3;
-            c.gridwidth = 1;
-            c.insets = new Insets(2, 0, 2, 0);
-            settingsPanel_GPT.add(getShowAgainBox(), c);
-
-            // Check Connection Button (Row 3)
-            c.weightx = 1;
-            c.gridx = 1;
-            c.gridy = 3;
-            c.insets = new Insets(2, 0, 2, 12);
+            // WFC: "Verbindung pruefen" next to the API key block.
+            c.weightx = 0;
+            c.gridx = 2;
+            c.gridy = 1;
+            c.insets = new Insets(2, 0, 2, 10);
             settingsPanel_GPT.add(getCheckConnectionButton(), c);
 
-            // Reset Button (Row 3)
-            c.weightx = 1;
-            c.gridx = 2;
-            c.gridy = 3;
-            c.insets = new Insets(2, 0, 2, 10);
+            // WFC-US15 (#24): RAG checkbox removed from the LLM Tools UI.
+            // WFC-US22 (#27): the T2P/P2T prompts live in their server-settings panels.
+            // WFC: the "Erneut anzeigen" (show again) checkbox was removed because the
+            // intermediate settings popup after the analysis was dropped. getShowAgainBox()
+            // and its persistence (read/apply/default) stay intact for config compatibility.
+
+            // WFC: "Auf Standard zuruecksetzen" below the last setting (the API key).
+            c.weightx = 0;
+            c.gridx = 0;
+            c.gridy = 2;
+            c.gridwidth = 2;
+            c.insets = new Insets(2, 0, 2, 0);
             settingsPanel_GPT.add(getResetButton(), c);
+            c.gridwidth = 1;
 
         }
 
@@ -653,7 +612,8 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
 
     private JScrollPane getPromptTextScrollPane() {
         JScrollPane scrollPane = new JScrollPane(getPromptText());
-        scrollPane.setPreferredSize(new Dimension(520, 100));
+        // WFC: keep the prompt area compact - roughly 4 visible lines.
+        scrollPane.setPreferredSize(new Dimension(520, 80));
         return scrollPane;
     }
 
@@ -938,7 +898,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             // base prompt that WoPeD assembles before sending the LLM request.
             promptText.setToolTipText(Messages.getString("Configuration.GPT.tool.tip.text.Title"));
             // WFC-US34: full LLM instruction sent as the &prompt= parameter (see DefaultStaticConfiguration).
-            promptText.setText(DefaultStaticConfiguration.DEFAULT_P2T_PROMPT);
+            promptText.setText(WoPeDGeneralConfiguration.getBuiltinGptPrompt());
         }
         return promptText;
     }
@@ -947,15 +907,16 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         if (showAgainBox == null) {
             showAgainBox = new JCheckBox(Messages.getString("Configuration.GPT.show.again.Title"));
             showAgainBox.setEnabled(true);
-            // WFC-US9 (#12): the tooltip key Configuration.GPT.tool.tip.text.Title
-            // describes the prompt text area, so it now lives on getPromptText().
+            // WFC-US28: explain that this checkbox toggles the P2T settings popup.
+            showAgainBox.setToolTipText(
+                    "<html>" + Messages.getString("Configuration.GPT.show.again.tooltip") + "</html>");
         }
         return showAgainBox;
     }
 
-    private WopedButton getResetButton() {
+    private JButton getResetButton() {
         if (resetButton == null) {
-            resetButton = new WopedButton();
+            resetButton = new JButton();
             resetButton.setText(Messages.getString("Configuration.GPT.standard.Title"));
             resetButton.setIcon(Messages.getImageIcon("Button.ColorReset"));
             resetButton.setPreferredSize(new Dimension(200, 25));
@@ -978,9 +939,9 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         return fetchGPTModelsButton;
     }
 
-    private WopedButton getCheckConnectionButton() {
+    private JButton getCheckConnectionButton() {
         if (checkConnectionButton == null) {
-            checkConnectionButton = new WopedButton();
+            checkConnectionButton = new JButton();
             checkConnectionButton.setText(Messages.getString("Configuration.GPT.connection.Title"));
             checkConnectionButton.setIcon(Messages.getImageIcon("Button.TestConnection"));
             checkConnectionButton.setMnemonic(Messages.getMnemonic("Button.TestConnection"));
@@ -1033,12 +994,17 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
             int responseCode = connection.getResponseCode();
             String message;
             if (responseCode == 200) {
-                message = "Connection successful to " + provider + " API!";
-                JOptionPane.showMessageDialog(this, message, "Success", JOptionPane.INFORMATION_MESSAGE);
+                message = Messages.getString("Configuration.GPT.connection.success.Message",
+                        new String[]{provider});
+                JOptionPane.showMessageDialog(this, message,
+                        Messages.getString("Configuration.GPT.connection.success.Title"),
+                        JOptionPane.INFORMATION_MESSAGE);
             } else {
                 message = Messages.getString("Configuration.GPT.connection.failed.Title")
                         + responseCode + " (" + provider + ")";
-                JOptionPane.showMessageDialog(this, message, "Connection Failed", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, message,
+                        Messages.getString("Configuration.GPT.connection.failed.DialogTitle"),
+                        JOptionPane.ERROR_MESSAGE);
             }
 
         } catch (IOException e) {
@@ -1062,7 +1028,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         if (modelComboBox == null) {
             modelComboBox = new JComboBox<>();
             modelComboBox.setEnabled(true);
-            modelComboBox.setToolTipText("Select a model");
+            modelComboBox.setToolTipText(Messages.getString("Configuration.GPT.model.tooltip"));
         }
         return modelComboBox;
     }
@@ -1112,7 +1078,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
     private JTextField getManagerPathText() {
         if (managerPathText == null) {
             managerPathText = new JTextField();
-            managerPathText.setColumns(40);
+            managerPathText.setColumns(16);
             managerPathText.setEnabled(true);
             managerPathText
                     .setToolTipText("<html>" + Messages.getString("Configuration.P2T.Label.ServerURI") + "</html>");
@@ -1131,9 +1097,9 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         return managerPathText_T2P;
     }
 
-    private WopedButton getTestButton() {
+    private JButton getTestButton() {
         if (testButton == null) {
-            testButton = new WopedButton();
+            testButton = new JButton();
             testButton.setText(Messages.getTitle("Button.TestConnection"));
             testButton.setIcon(Messages.getImageIcon("Button.TestConnection"));
             testButton.setMnemonic(Messages.getMnemonic("Button.TestConnection"));
@@ -1148,9 +1114,9 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         return testButton;
     }
 
-    private WopedButton getTestButton_T2P() {
+    private JButton getTestButton_T2P() {
         if (testButton_T2P == null) {
-            testButton_T2P = new WopedButton();
+            testButton_T2P = new JButton();
             testButton_T2P.setText(Messages.getTitle("Button.TestConnection"));
             testButton_T2P.setIcon(Messages.getImageIcon("Button.TestConnection"));
             testButton_T2P.setMnemonic(Messages.getMnemonic("Button.TestConnection"));
@@ -1165,9 +1131,9 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         return testButton_T2P;
     }
 
-    private WopedButton getDefaultButton() {
+    private JButton getDefaultButton() {
         if (defaultButton == null) {
-            defaultButton = new WopedButton();
+            defaultButton = new JButton();
             defaultButton.setText(Messages.getTitle("Button.SetToDefault"));
             defaultButton.setIcon(Messages.getImageIcon("Button.ColorReset"));
             defaultButton.setPreferredSize(new Dimension(200, 25));
@@ -1176,9 +1142,9 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         return defaultButton;
     }
 
-    private WopedButton getDefaultButton_T2P() {
+    private JButton getDefaultButton_T2P() {
         if (defaultButton_T2P == null) {
-            defaultButton_T2P = new WopedButton();
+            defaultButton_T2P = new JButton();
             defaultButton_T2P.setText(Messages.getTitle("Button.SetToDefault"));
             defaultButton_T2P.setIcon(Messages.getImageIcon("Button.ColorReset"));
             defaultButton_T2P.setPreferredSize(new Dimension(200, 25));
@@ -1190,7 +1156,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
     private JTextField getServiceUrlText_LLM() {
         if (serviceUrlText_LLM == null) {
             serviceUrlText_LLM = new JTextField();
-            serviceUrlText_LLM.setColumns(40);
+            serviceUrlText_LLM.setColumns(20);
             serviceUrlText_LLM.setEnabled(true);
             serviceUrlText_LLM
                     .setToolTipText("<html>" + Messages.getString("Configuration.T2P.Label.ServerHost") + "</html>");
@@ -1238,7 +1204,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
     private JTextField getServiceUriText_LLM() {
         if (serviceUriText_LLM == null) {
             serviceUriText_LLM = new JTextField();
-            serviceUriText_LLM.setColumns(40);
+            serviceUriText_LLM.setColumns(16);
             serviceUriText_LLM.setEnabled(true);
             serviceUriText_LLM
                     .setToolTipText("<html>" + Messages.getString("Configuration.T2P.Label.ServerURI") + "</html>");
@@ -1246,9 +1212,9 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         return serviceUriText_LLM;
     }
 
-    private WopedButton getTestButton_LLM() {
+    private JButton getTestButton_LLM() {
         if (testButton_LLM == null) {
-            testButton_LLM = new WopedButton();
+            testButton_LLM = new JButton();
             testButton_LLM.setText(Messages.getTitle("Button.TestConnection"));
             testButton_LLM.setIcon(Messages.getImageIcon("Button.TestConnection"));
             testButton_LLM.setMnemonic(Messages.getMnemonic("Button.TestConnection"));
@@ -1262,9 +1228,9 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         return testButton_LLM;
     }
 
-    private WopedButton getDefaultButton_LLM() {
+    private JButton getDefaultButton_LLM() {
         if (defaultButton_LLM == null) {
-            defaultButton_LLM = new WopedButton();
+            defaultButton_LLM = new JButton();
             defaultButton_LLM.setText(Messages.getTitle("Button.SetToDefault"));
             defaultButton_LLM.setIcon(Messages.getImageIcon("Button.ColorReset"));
             defaultButton_LLM.setPreferredSize(new Dimension(200, 25));
@@ -1347,6 +1313,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         getServiceUrlText_LLM().setText(ConfigurationManager.getStandardConfiguration().getT2PLlmServiceHost());
         getServicePortText_LLM().setText("" + ConfigurationManager.getStandardConfiguration().getT2PLlmServicePort());
         getServiceUriText_LLM().setText("" + ConfigurationManager.getStandardConfiguration().getT2PLlmServiceUri());
+        getPromptTextT2P().setText(WoPeDGeneralConfiguration.getBuiltinGptPromptT2P());
     }
 
     private void testProcess2TextConnection() {
@@ -1441,7 +1408,7 @@ public class ConfNLPToolsPanel extends AbstractConfPanel {
         getServerURLText().setText(ConfigurationManager.getStandardConfiguration().getProcess2TextServerHost());
         getManagerPathText().setText(ConfigurationManager.getStandardConfiguration().getProcess2TextServerURI());
         getServerPortText().setText("" + ConfigurationManager.getStandardConfiguration().getProcess2TextServerPort());
-        getPromptText().setText(DefaultStaticConfiguration.DEFAULT_P2T_PROMPT);
+        getPromptText().setText(WoPeDGeneralConfiguration.getBuiltinGptPrompt());
     }
 
     private void setDefaultValues_T2P() {

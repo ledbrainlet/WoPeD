@@ -20,6 +20,7 @@ import org.woped.config.Registration;
 import org.woped.config.WoPeDConfiguration;
 import org.woped.config.metrics.WoPeDMetricsConfiguration;
 import org.woped.core.config.ConfigurationManager;
+import org.woped.core.config.DefaultStaticConfiguration;
 import org.woped.core.config.IGeneralConfiguration;
 import org.woped.core.utilities.LoggerManager;
 
@@ -161,6 +162,50 @@ public class WoPeDGeneralConfiguration extends WoPeDConfiguration implements IGe
       LoggerManager.error(Constants.CONFIG_LOGGER, rb.getString("Init.Config.ReadingError"));
       return false;
     }
+  }
+
+  // WFC: lazily parse the bundled WoPeDconfig.xml into a SEPARATE document so
+  // reading shipped defaults (e.g. for "reset to default") never disturbs the
+  // active, shared confDoc (the user configuration).
+  private static ConfigurationDocument builtinConfDoc = null;
+  private static boolean builtinConfTried = false;
+
+  private static ConfigurationDocument getBuiltinConfDoc() {
+    if (!builtinConfTried) {
+      builtinConfTried = true;
+      try (InputStream is = WoPeDConfiguration.class.getResourceAsStream(CONFIG_BUILTIN_FILE)) {
+        builtinConfDoc = ConfigurationDocument.Factory.parse(is);
+      } catch (XmlException | IOException e) {
+        LoggerManager.error(
+            Constants.CONFIG_LOGGER, "Could not read built-in WoPeDconfig.xml defaults.");
+        builtinConfDoc = null;
+      }
+    }
+    return builtinConfDoc;
+  }
+
+  /** P2T default prompt from the bundled WoPeDconfig.xml (code default as last resort). */
+  public static String getBuiltinGptPrompt() {
+    ConfigurationDocument d = getBuiltinConfDoc();
+    if (d != null
+        && d.getConfiguration() != null
+        && d.getConfiguration().getGpt() != null
+        && d.getConfiguration().getGpt().isSetGptPrompt()) {
+      return d.getConfiguration().getGpt().getGptPrompt();
+    }
+    return DefaultStaticConfiguration.DEFAULT_P2T_PROMPT;
+  }
+
+  /** T2P default prompt from the bundled WoPeDconfig.xml (code default as last resort). */
+  public static String getBuiltinGptPromptT2P() {
+    ConfigurationDocument d = getBuiltinConfDoc();
+    if (d != null
+        && d.getConfiguration() != null
+        && d.getConfiguration().getGpt() != null
+        && d.getConfiguration().getGpt().isSetGptPromptT2P()) {
+      return d.getConfiguration().getGpt().getGptPromptT2P();
+    }
+    return DefaultStaticConfiguration.DEFAULT_T2P_PROMPT;
   }
 
   /**
